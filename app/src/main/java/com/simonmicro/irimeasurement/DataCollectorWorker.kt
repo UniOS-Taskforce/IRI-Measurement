@@ -142,7 +142,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         runBlocking { dataPointMutex.lock() }
         this.updateNotificationContent(
             "Active since " + (runtime).toString() + " seconds and collected " +
-            (this.accelerometerHistory.size).toString() + " data points."
+            this.dataPointCount.toString() + " data points."
         )
         val currentDataCount: Long = this.dataPointCount
         runBlocking { dataPointMutex.unlock() } // Release the lock - just in case we don't flush now

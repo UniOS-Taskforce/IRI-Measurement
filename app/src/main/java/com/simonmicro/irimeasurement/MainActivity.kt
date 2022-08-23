@@ -125,20 +125,15 @@ class MainActivity : AppCompatActivity() {
             else
                 this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
         }
-        if(DataCollectorWorker.instance != null) {
+        if(isRunning && DataCollectorWorker.instance != null) {
             var service: DataCollectorWorker = DataCollectorWorker.instance!!
             this.serviceUptime?.text = ((System.currentTimeMillis() - service.startTime) / 1000).toString() + "s"
-            if(isRunning) {
-                val bufferPercent = ((service.dataPointCount - service.dataPointCountOnLastFlush).toFloat() / service.flushTarget.toFloat() * 100).toInt()
-                if(bufferPercent > 100) {
-                    this.serviceLoad?.isIndeterminate = true
-                } else {
-                    this.serviceLoad?.isIndeterminate = false
-                    this.serviceLoad?.progress = bufferPercent
-                }
+            val bufferPercent = ((service.dataPointCount - service.dataPointCountOnLastFlush).toFloat() / service.flushTarget.toFloat() * 100).toInt()
+            if(bufferPercent > 100) {
+                this.serviceLoad?.isIndeterminate = true
             } else {
                 this.serviceLoad?.isIndeterminate = false
-                this.serviceLoad?.progress = 0
+                this.serviceLoad?.progress = bufferPercent
             }
             runBlocking { service.dataPointMutex.lock() }
             if (service.lastAccelerometerPoint != null)
@@ -154,6 +149,10 @@ class MainActivity : AppCompatActivity() {
             if (service.lastHumidityPoint != null)
                 this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
             runBlocking { service.dataPointMutex.unlock() }
+        }
+        if(!isRunning) {
+            this.serviceLoad?.isIndeterminate = false
+            this.serviceLoad?.progress = 0
         }
         if(this.getServiceUIState())
             this.serviceControlButton?.text = "STOP"
