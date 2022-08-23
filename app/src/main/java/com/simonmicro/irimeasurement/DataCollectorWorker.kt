@@ -13,6 +13,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import java.lang.Exception
 import java.util.logging.Logger
 
@@ -25,28 +27,70 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
     private var notificationBuilder: NotificationCompat.Builder? = null
     private val log = Logger.getLogger(DataCollectorWorker::class.java.name)
     private lateinit var sensorManager: SensorManager
-    private var accelSensor: Sensor? = null
     private var requestStop: Boolean = false
-    var status: DataCollectorWorkerStatus = DataCollectorWorkerStatus.DEAD
 
-    var lastAccelerometerX: Float = 0.0f
-    var lastAccelerometerY: Float = 0.0f
-    var lastAccelerometerZ: Float = 0.0f
+    private var accelSensor: Sensor? = null
+    private var tempSensor: Sensor? = null
+    private var gravSensor: Sensor? = null
+    private var gyroSensor: Sensor? = null
+    private var magSensor: Sensor? = null
+    private var pressSensor: Sensor? = null
+    private var humiSensor: Sensor? = null
+
+    var status: DataCollectorWorkerStatus = DataCollectorWorkerStatus.DEAD
+    var startTime: Long = System.currentTimeMillis()
+    private var dataPointCount: Long = 0
+
+    var dataPointMutex = Mutex()
+
+    open inner class DataPoint {
+        var time: Long = System.currentTimeMillis()
+    }
+
+    inner class AccelerometerPoint: DataPoint() {
+        var accelX: Float = 0.0f
+        var accelY: Float = 0.0f
+        var accelZ: Float = 0.0f
+    }
+    var lastAccelerometerPoint: AccelerometerPoint? = null
+    private var accelerometerHistory: ArrayList<AccelerometerPoint> = ArrayList()
+
+    inner class GravityPoint: DataPoint() {
+        var accelX: Float = 0.0f
+        var accelY: Float = 0.0f
+        var accelZ: Float = 0.0f
+    }
+    var lastGravityPoint: GravityPoint? = null
+    private var gravityHistory: ArrayList<GravityPoint> = ArrayList()
+
+    inner class MagnetometerPoint: DataPoint() {
+        var fieldX: Float = 0.0f
+        var fieldY: Float = 0.0f
+        var fieldZ: Float = 0.0f
+    }
+    var lastMagnetometerPoint: MagnetometerPoint? = null
+    private var magnetometerHistory: ArrayList<MagnetometerPoint> = ArrayList()
+
+    inner class TemperaturePoint: DataPoint() {
+        var amount: Float = 0.0f
+    }
+    var lastTemperaturePoint: TemperaturePoint? = null
+    private var temperatureHistory: ArrayList<TemperaturePoint> = ArrayList()
+
+    inner class PressurePoint: DataPoint() {
+        var amount: Float = 0.0f
+    }
+    var lastPressurePoint: PressurePoint? = null
+    private var pressureHistory: ArrayList<PressurePoint> = ArrayList()
+
+    inner class HumidityPoint: DataPoint() {
+        var amount: Float = 0.0f
+    }
+    var lastHumidityPoint: HumidityPoint? = null
+    private var humidityHistory: ArrayList<HumidityPoint> = ArrayList()
 
     companion object {
         var instance: DataCollectorWorker? = null
-    }
-
-    /**
-     * These are the loop-relevant variables
-     */
-    var loopCounter = 0
-
-    /**
-     * This function is used to reset the state of this worker in case of failures or shutdown
-     */
-    private fun reset() {
-        this.loopCounter = 0
     }
 
     private fun updateNotificationContent(i: String) {
@@ -62,26 +106,44 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         setForegroundAsync(createForegroundInfo()) // This will also create our ongoing notification
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        val speed: Int = SensorManager.SENSOR_DELAY_NORMAL // Careful! If we are too fast we will lock-up!
         accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        sensorManager.registerListener(this, accelSensor, SensorManager.SENSOR_DELAY_FASTEST)
-        // Note, that we do not reset any internal variables here - to allow the worker to seamlessly "resume" if it restarts
+        tempSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
+        gravSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
+        gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
+        magSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        pressSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)
+        humiSensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
+        if(accelSensor == null) this.log.warning("No accelerometer found!") else sensorManager.registerListener(this, accelSensor, speed)
+        if(tempSensor == null) this.log.warning("No temperature found!") else sensorManager.registerListener(this, tempSensor, speed)
+        if(gravSensor == null) this.log.warning("No gravity found!") else sensorManager.registerListener(this, gravSensor, speed)
+        if(gyroSensor == null) this.log.warning("No gyroscope found!") else sensorManager.registerListener(this, gyroSensor, speed)
+        if(magSensor == null) this.log.warning("No magnetometer found!") else sensorManager.registerListener(this, magSensor, speed)
+        if(pressSensor == null) this.log.warning("No pressure found!") else sensorManager.registerListener(this, pressSensor, speed)
+        if(humiSensor == null) this.log.warning("No humidity found!") else sensorManager.registerListener(this, humiSensor, speed)
     }
 
     /**
      * This function is called on a regular basis - make sure to keep every iteration as short-as-possible
      */
     private fun loop(): Boolean {
-        this.loopCounter++
+        var runtime: Long = (System.currentTimeMillis() - this.startTime) / 1000
 
-        this.updateNotificationContent("Active since " + this.loopCounter.toString() + " seconds...");
+        runBlocking { dataPointMutex.lock() }
+        this.updateNotificationContent(
+            "Active since " + (runtime).toString() + " seconds and collected " +
+            (this.accelerometerHistory.size).toString() + " data points."
+        )
+        runBlocking { dataPointMutex.unlock() }
 
-        return this.loopCounter < 160 // Should we proceed?
+        return runtime < 300 // Should we "finish"?
     }
 
     private fun run() {
         this.status = DataCollectorWorkerStatus.ALIVE
         MainActivity.asyncUpdateUI() // TODO auto-call this on setters!
 
+        this.log.warning("Running ONLY for 300 seconds!") // TODO Change this to unlimited... If stable.
         var wantProceed = true
         while (!this.requestStop && wantProceed) {
             // Update notification as first step, so we don't show it in case the user requested this worker to stop
@@ -97,7 +159,6 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
-        this.reset()
     }
 
     override fun doWork(): Result {
@@ -160,12 +221,47 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
     }
 
     override fun onSensorChanged(event: SensorEvent) {
-        if(event.sensor == accelSensor) {
-            this.lastAccelerometerX = event.values[0]
-            this.lastAccelerometerY = event.values[1]
-            this.lastAccelerometerZ = event.values[2]
+        runBlocking { dataPointMutex.lock() }
+        this.dataPointCount++
+        if (event.sensor.type == accelSensor?.type) {
+            var a = AccelerometerPoint()
+            a.accelX = event.values[0]
+            a.accelY = event.values[1]
+            a.accelZ = event.values[2]
+            this.lastAccelerometerPoint = a
+            this.accelerometerHistory.add(a)
+        } else if (event.sensor.type == gravSensor?.type) {
+            var g = GravityPoint()
+            g.accelX = event.values[0]
+            g.accelY = event.values[1]
+            g.accelZ = event.values[2]
+            this.lastGravityPoint = g
+            this.gravityHistory.add(g)
+        } else if (event.sensor.type == magSensor?.type) {
+            var m = MagnetometerPoint()
+            m.fieldX = event.values[0]
+            m.fieldY = event.values[1]
+            m.fieldZ = event.values[2]
+            this.lastMagnetometerPoint = m
+            this.magnetometerHistory.add(m)
+        } else if (event.sensor.type == tempSensor?.type) {
+            var t = TemperaturePoint()
+            t.amount = event.values[0]
+            this.lastTemperaturePoint = t
+            this.temperatureHistory.add(t)
+        } else if (event.sensor.type == pressSensor?.type) {
+            var p = PressurePoint()
+            p.amount = event.values[0]
+            this.lastPressurePoint = p
+            this.pressureHistory.add(p)
+        } else if (event.sensor.type == humiSensor?.type) {
+            var h = HumidityPoint()
+            h.amount = event.values[0]
+            this.lastHumidityPoint = h
+            this.humidityHistory.add(h)
         } else
             print(event.values)
+        runBlocking { dataPointMutex.unlock() }
         MainActivity.asyncUpdateUI()
     }
 }

@@ -13,15 +13,22 @@ import androidx.work.WorkManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.util.logging.Logger
+
+fun Float.format(digits: Int) = "%.${digits}f".format(this)
 
 class MainActivity : AppCompatActivity() {
     private val log = Logger.getLogger(MainActivity::class.java.name)
     private var serviceControlButton: Button? = null
-    private var serviceStatusText: TextView? = null
-    private var serviceLastAccelX: TextView? = null
-    private var serviceLastAccelY: TextView? = null
-    private var serviceLastAccelZ: TextView? = null
+    private var serviceStatus: TextView? = null
+    private var serviceUptime: TextView? = null
+    private var serviceLastAccel: TextView? = null
+    private var serviceLastGrav: TextView? = null
+    private var serviceLastMag: TextView? = null
+    private var serviceLastTemp: TextView? = null
+    private var serviceLastPress: TextView? = null
+    private var serviceLastHumi: TextView? = null
 
     companion object {
         private var instance: MainActivity? = null
@@ -40,10 +47,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        this.serviceStatusText = findViewById<TextView>(R.id.collectorStatus)
-        this.serviceLastAccelX = findViewById<TextView>(R.id.collectorLastAccelX)
-        this.serviceLastAccelY = findViewById<TextView>(R.id.collectorLastAccelY)
-        this.serviceLastAccelZ = findViewById<TextView>(R.id.collectorLastAccelZ)
+        this.serviceStatus = findViewById<TextView>(R.id.collectorStatus)
+        this.serviceUptime = findViewById<TextView>(R.id.collectorUptime)
+        this.serviceLastAccel = findViewById<TextView>(R.id.collectorAccel)
+        this.serviceLastMag = findViewById<TextView>(R.id.collectorMag)
+        this.serviceLastGrav = findViewById<TextView>(R.id.collectorGrav)
+        this.serviceLastTemp = findViewById<TextView>(R.id.collectorTemp)
+        this.serviceLastPress = findViewById<TextView>(R.id.collectorPress)
+        this.serviceLastHumi = findViewById<TextView>(R.id.collectorHumi)
         this.serviceControlButton = findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
             if(this.getServiceUIState()) {
@@ -63,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         this.updateUI() // Initial view update
         MainActivity.instance = this // Enable interaction from outside
 
-        // TODO this code ↓
+        // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyways)
         val handler = Handler()
         val runnableCode: Runnable = object : Runnable {
             override fun run() {
@@ -83,38 +94,42 @@ class MainActivity : AppCompatActivity() {
         var l: List<WorkInfo> = WorkManager.getInstance(this).getWorkInfosForUniqueWork(getString(R.string.service_id)).get()
         if(l.isEmpty()) {
             // Do nothing, as the service never ran
-            this.serviceStatusText?.text = "-"
+            this.serviceStatus?.text = "-"
         } else {
             val state: WorkInfo.State = l[0].state
             // Update text
             if(state == WorkInfo.State.SUCCEEDED)
-                this.serviceStatusText?.text = "Finished"
+                this.serviceStatus?.text = "Finished"
             else if(state == WorkInfo.State.FAILED)
-                this.serviceStatusText?.text = "Crashed"
+                this.serviceStatus?.text = "Crashed"
             else if(state == WorkInfo.State.CANCELLED)
-                this.serviceStatusText?.text = "Stopped"
+                this.serviceStatus?.text = "Stopped"
             else if(state == WorkInfo.State.RUNNING)
-                this.serviceStatusText?.text = "Running (active)..."
-            else if(state == WorkInfo.State.ENQUEUED)
-                this.serviceStatusText?.text = "Running (queued)..."
-            else if(state == WorkInfo.State.BLOCKED)
-                this.serviceStatusText?.text = "Running (blocked)..."
-            else
-                this.serviceStatusText?.text = "???"
+                this.serviceStatus?.text = "Running..."
             // Update text color
             if(state == WorkInfo.State.FAILED)
-                this.serviceStatusText?.setTextColor(Color.RED)
+                this.serviceStatus?.setTextColor(Color.RED)
             else if(state == WorkInfo.State.RUNNING)
-                this.serviceStatusText?.setTextColor(Color.GREEN)
+                this.serviceStatus?.setTextColor(Color.GREEN)
             else
-                this.serviceStatusText?.setTextColor(this.serviceLastAccelX?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
+                this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
             if(DataCollectorWorker.instance != null) {
-                this.serviceLastAccelX?.text =
-                    DataCollectorWorker.instance!!.lastAccelerometerX.toString()
-                this.serviceLastAccelY?.text =
-                    DataCollectorWorker.instance!!.lastAccelerometerY.toString()
-                this.serviceLastAccelZ?.text =
-                    DataCollectorWorker.instance!!.lastAccelerometerZ.toString()
+                var service: DataCollectorWorker = DataCollectorWorker.instance!!
+                this.serviceUptime?.text = ((System.currentTimeMillis() - service.startTime) / 1000).toString() + "s"
+                runBlocking { service.dataPointMutex.lock() }
+                if (service.lastAccelerometerPoint != null)
+                    this.serviceLastAccel?.text = "(${service.lastAccelerometerPoint!!.accelX.format(2)}, ${service.lastAccelerometerPoint!!.accelY.format(2)}, ${service.lastAccelerometerPoint!!.accelZ.format(2)}) m/s²"
+                if (service.lastGravityPoint != null)
+                    this.serviceLastGrav?.text = "(${service.lastGravityPoint!!.accelX.format(2)}, ${service.lastGravityPoint!!.accelY.format(2)}, ${service.lastGravityPoint!!.accelZ.format(2)}) m/s²"
+                if (service.lastMagnetometerPoint != null)
+                    this.serviceLastMag?.text = "(${service.lastMagnetometerPoint!!.fieldX.format(2)}, ${service.lastMagnetometerPoint!!.fieldY.format(2)}, ${service.lastMagnetometerPoint!!.fieldZ.format(2)}) μT"
+                if (service.lastTemperaturePoint != null)
+                    this.serviceLastTemp?.text = "${service.lastTemperaturePoint!!.amount.format(2)} °C"
+                if (service.lastPressurePoint != null)
+                    this.serviceLastPress?.text = "${service.lastPressurePoint!!.amount.format(2)} hPa"
+                if (service.lastHumidityPoint != null)
+                    this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
+                runBlocking { service.dataPointMutex.unlock() }
             }
         }
         if(this.getServiceUIState())
