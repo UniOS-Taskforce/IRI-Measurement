@@ -39,7 +39,9 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
 
     var status: DataCollectorWorkerStatus = DataCollectorWorkerStatus.DEAD
     var startTime: Long = System.currentTimeMillis()
-    private var dataPointCount: Long = 0
+    var dataPointCount: Long = 0
+    var dataPointCountOnLastFlush: Long = 0
+    val flushTarget: Int = 4096
 
     var dataPointMutex = Mutex()
 
@@ -70,6 +72,14 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
     }
     var lastMagnetometerPoint: MagnetometerPoint? = null
     private var magnetometerHistory: ArrayList<MagnetometerPoint> = ArrayList()
+
+    inner class GyrometerPoint: DataPoint() {
+        var rotVelX: Float = 0.0f
+        var rotVelY: Float = 0.0f
+        var rotVelZ: Float = 0.0f
+    }
+    var lastGyrometerPoint: GyrometerPoint? = null
+    private var gyrometerHistory: ArrayList<GyrometerPoint> = ArrayList()
 
     inner class TemperaturePoint: DataPoint() {
         var amount: Float = 0.0f
@@ -134,9 +144,43 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
             "Active since " + (runtime).toString() + " seconds and collected " +
             (this.accelerometerHistory.size).toString() + " data points."
         )
-        runBlocking { dataPointMutex.unlock() }
+        val currentDataCount: Long = this.dataPointCount
+        runBlocking { dataPointMutex.unlock() } // Release the lock - just in case we don't flush now
 
-        return runtime < 300 // Should we "finish"?
+        val done: Boolean = runtime > 300 // Should we "finish" now?
+
+        // Do we need to flush?
+        if(done || (currentDataCount - this.dataPointCountOnLastFlush > this.flushTarget)) {
+            runBlocking { dataPointMutex.lock() }
+            // Move the current values into our task
+            var accelerometerHistoryCopy: ArrayList<AccelerometerPoint> = accelerometerHistory
+            var gravityHistoryCopy: ArrayList<GravityPoint> = gravityHistory
+            var magnetometerHistoryCopy: ArrayList<MagnetometerPoint> = magnetometerHistory
+            var gyrometerHistoryCopy: ArrayList<GyrometerPoint> = gyrometerHistory
+            var temperatureHistoryCopy: ArrayList<TemperaturePoint> = temperatureHistory
+            var pressureHistoryCopy: ArrayList<PressurePoint> = pressureHistory
+            var humidityHistoryCopy: ArrayList<HumidityPoint> = humidityHistory
+            // Free current queued values by creating new instances
+            this.accelerometerHistory = ArrayList()
+            this.gravityHistory = ArrayList()
+            this.magnetometerHistory = ArrayList()
+            this.gyrometerHistory = ArrayList()
+            this.temperatureHistory = ArrayList()
+            this.pressureHistory = ArrayList()
+            this.humidityHistory = ArrayList()
+            runBlocking { dataPointMutex.unlock() }
+            // TODO Persist data
+            accelerometerHistoryCopy.clear()
+            temperatureHistoryCopy.clear()
+            gravityHistoryCopy.clear()
+            gyrometerHistoryCopy.clear()
+            magnetometerHistoryCopy.clear()
+            pressureHistoryCopy.clear()
+            humidityHistoryCopy.clear()
+            this.dataPointCountOnLastFlush = currentDataCount
+        }
+
+        return !done
     }
 
     private fun run() {
@@ -244,6 +288,13 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
             m.fieldZ = event.values[2]
             this.lastMagnetometerPoint = m
             this.magnetometerHistory.add(m)
+        } else if (event.sensor.type == gyroSensor?.type) {
+            var g = GyrometerPoint()
+            g.rotVelX = event.values[0]
+            g.rotVelY = event.values[1]
+            g.rotVelZ = event.values[2]
+            this.lastGyrometerPoint = g
+            this.gyrometerHistory.add(g)
         } else if (event.sensor.type == tempSensor?.type) {
             var t = TemperaturePoint()
             t.amount = event.values[0]

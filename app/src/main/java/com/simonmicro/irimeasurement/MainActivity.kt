@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.widget.Button
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.work.ExistingWorkPolicy
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private var serviceLastTemp: TextView? = null
     private var serviceLastPress: TextView? = null
     private var serviceLastHumi: TextView? = null
+    private var serviceLoad: ProgressBar? = null
 
     companion object {
         private var instance: MainActivity? = null
@@ -60,6 +62,7 @@ class MainActivity : AppCompatActivity() {
         this.serviceLastTemp = findViewById<TextView>(R.id.collectorTemp)
         this.serviceLastPress = findViewById<TextView>(R.id.collectorPress)
         this.serviceLastHumi = findViewById<TextView>(R.id.collectorHumi)
+        this.serviceLoad = findViewById<ProgressBar>(R.id.serviceProgressBar)
         this.serviceControlButton = findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
             if(this.getServiceUIState()) {
@@ -97,6 +100,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI() {
         var l: List<WorkInfo> = WorkManager.getInstance(this).getWorkInfosForUniqueWork(getString(R.string.service_id)).get()
+        var isRunning: Boolean = false
         if(l.isEmpty()) {
             // Do nothing, as the service never ran
             this.serviceStatus?.text = "-"
@@ -109,8 +113,10 @@ class MainActivity : AppCompatActivity() {
                 this.serviceStatus?.text = "Crashed"
             else if(state == WorkInfo.State.CANCELLED)
                 this.serviceStatus?.text = "Stopped"
-            else if(state == WorkInfo.State.RUNNING)
+            else if(state == WorkInfo.State.RUNNING) {
                 this.serviceStatus?.text = "Running..."
+                isRunning = true
+            }
             // Update text color
             if(state == WorkInfo.State.FAILED)
                 this.serviceStatus?.setTextColor(Color.RED)
@@ -118,24 +124,36 @@ class MainActivity : AppCompatActivity() {
                 this.serviceStatus?.setTextColor(Color.GREEN)
             else
                 this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
-            if(DataCollectorWorker.instance != null) {
-                var service: DataCollectorWorker = DataCollectorWorker.instance!!
-                this.serviceUptime?.text = ((System.currentTimeMillis() - service.startTime) / 1000).toString() + "s"
-                runBlocking { service.dataPointMutex.lock() }
-                if (service.lastAccelerometerPoint != null)
-                    this.serviceLastAccel?.text = "(${service.lastAccelerometerPoint!!.accelX.format(2)}, ${service.lastAccelerometerPoint!!.accelY.format(2)}, ${service.lastAccelerometerPoint!!.accelZ.format(2)}) m/s²"
-                if (service.lastGravityPoint != null)
-                    this.serviceLastGrav?.text = "(${service.lastGravityPoint!!.accelX.format(2)}, ${service.lastGravityPoint!!.accelY.format(2)}, ${service.lastGravityPoint!!.accelZ.format(2)}) m/s²"
-                if (service.lastMagnetometerPoint != null)
-                    this.serviceLastMag?.text = "(${service.lastMagnetometerPoint!!.fieldX.format(2)}, ${service.lastMagnetometerPoint!!.fieldY.format(2)}, ${service.lastMagnetometerPoint!!.fieldZ.format(2)}) μT"
-                if (service.lastTemperaturePoint != null)
-                    this.serviceLastTemp?.text = "${service.lastTemperaturePoint!!.amount.format(2)} °C"
-                if (service.lastPressurePoint != null)
-                    this.serviceLastPress?.text = "${service.lastPressurePoint!!.amount.format(2)} hPa"
-                if (service.lastHumidityPoint != null)
-                    this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
-                runBlocking { service.dataPointMutex.unlock() }
+        }
+        if(DataCollectorWorker.instance != null) {
+            var service: DataCollectorWorker = DataCollectorWorker.instance!!
+            this.serviceUptime?.text = ((System.currentTimeMillis() - service.startTime) / 1000).toString() + "s"
+            if(isRunning) {
+                val bufferPercent = ((service.dataPointCount - service.dataPointCountOnLastFlush).toFloat() / service.flushTarget.toFloat() * 100).toInt()
+                if(bufferPercent > 100) {
+                    this.serviceLoad?.isIndeterminate = true
+                } else {
+                    this.serviceLoad?.isIndeterminate = false
+                    this.serviceLoad?.progress = bufferPercent
+                }
+            } else {
+                this.serviceLoad?.isIndeterminate = false
+                this.serviceLoad?.progress = 0
             }
+            runBlocking { service.dataPointMutex.lock() }
+            if (service.lastAccelerometerPoint != null)
+                this.serviceLastAccel?.text = "(${service.lastAccelerometerPoint!!.accelX.format(2)}, ${service.lastAccelerometerPoint!!.accelY.format(2)}, ${service.lastAccelerometerPoint!!.accelZ.format(2)}) m/s²"
+            if (service.lastGravityPoint != null)
+                this.serviceLastGrav?.text = "(${service.lastGravityPoint!!.accelX.format(2)}, ${service.lastGravityPoint!!.accelY.format(2)}, ${service.lastGravityPoint!!.accelZ.format(2)}) m/s²"
+            if (service.lastMagnetometerPoint != null)
+                this.serviceLastMag?.text = "(${service.lastMagnetometerPoint!!.fieldX.format(2)}, ${service.lastMagnetometerPoint!!.fieldY.format(2)}, ${service.lastMagnetometerPoint!!.fieldZ.format(2)}) μT"
+            if (service.lastTemperaturePoint != null)
+                this.serviceLastTemp?.text = "${service.lastTemperaturePoint!!.amount.format(2)} °C"
+            if (service.lastPressurePoint != null)
+                this.serviceLastPress?.text = "${service.lastPressurePoint!!.amount.format(2)} hPa"
+            if (service.lastHumidityPoint != null)
+                this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
+            runBlocking { service.dataPointMutex.unlock() }
         }
         if(this.getServiceUIState())
             this.serviceControlButton?.text = "STOP"

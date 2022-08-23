@@ -6,31 +6,21 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="..."
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/collectorAlign" />
-
     <LinearLayout
         android:id="@+id/collectorAlign"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:layout_gravity="center"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
         <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:minWidth="128pt">
 
             <TableRow
                 android:layout_width="match_parent"
@@ -39,8 +29,9 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Collector Status"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:singleLine="true"
+                    android:text="Collector Status" />
 
                 <TextView
                     android:id="@+id/collectorStatus"
@@ -56,8 +47,8 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Collector Uptime"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Collector Uptime" />
 
                 <TextView
                     android:id="@+id/collectorUptime"
@@ -68,13 +59,13 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Accelerometer"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Accelerometer" />
 
                 <TextView
                     android:id="@+id/collectorAccel"
@@ -85,13 +76,13 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Magnetometer"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Magnetometer" />
 
                 <TextView
                     android:id="@+id/collectorMag"
@@ -102,13 +93,13 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Gravity"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Gravity" />
 
                 <TextView
                     android:id="@+id/collectorGrav"
@@ -119,13 +110,13 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Temperature"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Temperature" />
 
                 <TextView
                     android:id="@+id/collectorTemp"
@@ -136,13 +127,13 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Pressure"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Pressure" />
 
                 <TextView
                     android:id="@+id/collectorPress"
@@ -153,13 +144,13 @@
 
             <TableRow
                 android:layout_width="match_parent"
-                android:layout_height="match_parent" >
+                android:layout_height="match_parent">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Humidity"
-                    android:paddingRight="10dp" />
+                    android:paddingRight="10dp"
+                    android:text="Humidity" />
 
                 <TextView
                     android:id="@+id/collectorHumi"
@@ -169,6 +160,21 @@
             </TableRow>
 
         </TableLayout>
+
+        <ProgressBar
+            android:id="@+id/serviceProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp" />
+
+        <Button
+            android:id="@+id/button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:text="..." />
 
     </LinearLayout>
 
