@@ -106,8 +106,8 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         setForegroundAsync(createForegroundInfo()) // This will also create our ongoing notification
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val speed: Int = SensorManager.SENSOR_DELAY_NORMAL // Careful! If we are too fast we will lock-up!
-        accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
+        accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
         tempSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
         gravSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)
         gyroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)

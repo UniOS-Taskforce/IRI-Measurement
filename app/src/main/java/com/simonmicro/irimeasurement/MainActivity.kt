@@ -32,10 +32,15 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private var instance: MainActivity? = null
+        private var asyncIsQueued: Boolean = false
 
         fun asyncUpdateUI() {
+            if(asyncIsQueued)
+                return
+            asyncIsQueued = true
             CoroutineScope(Dispatchers.Main).launch {
                 MainActivity.instance?.updateUI()
+                asyncIsQueued = false
             }
         }
     }
