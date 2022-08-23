@@ -13,6 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IRIMeasurement"
         tools:targetApi="31">
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -22,6 +23,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- This is the long-running background service used for data collection -->
+        <service
+            android:name="androidx.work.impl.foreground.SystemForegroundService"
+            android:foregroundServiceType="location"
+            tools:node="merge" />
     </application>
 
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
 </manifest>
