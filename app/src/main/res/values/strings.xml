@@ -1,8 +1,11 @@
 <resources>
     <string name="app_name">IRI Measurement</string>
+    <string name="app_title">International Roughness Index</string>
     <string name="service_id">collector</string>
     <string name="service_notification_channel_id">service_notify_channel</string>
     <string name="service_notification_channel_title">Collector Service Notifications</string>
     <string name="service_notification_channel_description">Used to communicate the collector service status and health during activity.</string>
     <string name="service_notification_title">Collector Status</string>
+    <string name="title_collect">Collect</string>
+    <string name="title_analyze">Analyze</string>
 </resources>

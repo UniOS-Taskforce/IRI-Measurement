@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.simonmicro.irimeasurement.ui.CollectFragment
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import java.lang.Exception
@@ -185,7 +186,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
 
     private fun run() {
         this.status = DataCollectorWorkerStatus.ALIVE
-        MainActivity.asyncUpdateUI() // TODO auto-call this on setters!
+        CollectFragment.asyncUpdateUI() // TODO auto-call this on setters!
 
         this.log.warning("Running ONLY for 300 seconds!") // TODO Change this to unlimited... If stable.
         var wantProceed = true
@@ -252,7 +253,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         this.notificationBuilder = NotificationCompat.Builder(applicationContext, applicationContext.getString(R.string.service_notification_channel_id))
             .setContentTitle(applicationContext.getString(R.string.service_notification_title))
             .setContentText("Starting...")
-            .setSmallIcon(R.drawable.ic_service_notification_icon)
+            .setSmallIcon(R.drawable.ic_twotone_fiber_manual_record_24)
             .setOngoing(true)
             .setTimeoutAfter(10000) // Just re-emit it to prevent is from removal - used to "timeout" if we crash badly
             .setOnlyAlertOnce(true) // Silence on repeated updates!
@@ -313,7 +314,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         } else
             print(event.values)
         runBlocking { dataPointMutex.unlock() }
-        MainActivity.asyncUpdateUI()
+        CollectFragment.asyncUpdateUI()
     }
 }
 

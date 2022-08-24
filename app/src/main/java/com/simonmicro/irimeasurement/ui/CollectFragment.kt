@@ -1,16 +1,22 @@
-package com.simonmicro.irimeasurement
+package com.simonmicro.irimeasurement.ui
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import androidx.fragment.app.Fragment
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
+import com.simonmicro.irimeasurement.DataCollectorWorker
+import com.simonmicro.irimeasurement.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -19,8 +25,8 @@ import java.util.logging.Logger
 
 fun Float.format(digits: Int) = "%.${digits}f".format(this)
 
-class MainActivity : AppCompatActivity() {
-    private val log = Logger.getLogger(MainActivity::class.java.name)
+class CollectFragment : Fragment() {
+    private val log = Logger.getLogger(CollectFragment::class.java.name)
     private var serviceControlButton: Button? = null
     private var serviceStatus: TextView? = null
     private var serviceUptime: TextView? = null
@@ -33,7 +39,7 @@ class MainActivity : AppCompatActivity() {
     private var serviceLoad: ProgressBar? = null
 
     companion object {
-        private var instance: MainActivity? = null
+        private var instance: CollectFragment? = null
         private var asyncIsQueued: Boolean = false
 
         fun asyncUpdateUI() {
@@ -41,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                 return
             asyncIsQueued = true
             CoroutineScope(Dispatchers.Main).launch {
-                MainActivity.instance?.updateUI()
+                instance?.updateUI()
                 asyncIsQueued = false
             }
         }
@@ -51,55 +57,8 @@ class MainActivity : AppCompatActivity() {
         return DataCollectorWorker.instance != null && DataCollectorWorker.instance?.status == DataCollectorWorker.DataCollectorWorkerStatus.ALIVE
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        this.serviceStatus = findViewById<TextView>(R.id.collectorStatus)
-        this.serviceUptime = findViewById<TextView>(R.id.collectorUptime)
-        this.serviceLastAccel = findViewById<TextView>(R.id.collectorAccel)
-        this.serviceLastMag = findViewById<TextView>(R.id.collectorMag)
-        this.serviceLastGrav = findViewById<TextView>(R.id.collectorGrav)
-        this.serviceLastTemp = findViewById<TextView>(R.id.collectorTemp)
-        this.serviceLastPress = findViewById<TextView>(R.id.collectorPress)
-        this.serviceLastHumi = findViewById<TextView>(R.id.collectorHumi)
-        this.serviceLoad = findViewById<ProgressBar>(R.id.serviceProgressBar)
-        this.serviceControlButton = findViewById(R.id.button)
-        this.serviceControlButton!!.setOnClickListener {
-            if(this.getServiceUIState()) {
-                this.log.info("Stopping collector...")
-                WorkManager.getInstance(this).cancelUniqueWork(getString(R.string.service_id))
-            } else {
-                this.log.info("Starting collector...")
-                WorkManager.getInstance(this).enqueueUniqueWork(
-                    getString(R.string.service_id),
-                    ExistingWorkPolicy.REPLACE,
-                    OneTimeWorkRequestBuilder<DataCollectorWorker>().build()
-                )
-            }
-            // Note that the new task is now scheduled to run / queued to cancel - this is not done yet! Meaning the states are not up-to-date yet.
-        }
-
-        this.updateUI() // Initial view update
-        MainActivity.instance = this // Enable interaction from outside
-
-        // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyways)
-        val handler = Handler()
-        val runnableCode: Runnable = object : Runnable {
-            override fun run() {
-                MainActivity.instance?.updateUI()
-                handler.postDelayed(this, 6000) // Every 6 seconds update fetched status
-            }
-        }
-        handler.post(runnableCode)
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        MainActivity.instance = null // Disable interaction from outside
-    }
-
     private fun updateUI() {
-        var l: List<WorkInfo> = WorkManager.getInstance(this).getWorkInfosForUniqueWork(getString(R.string.service_id)).get()
+        var l: List<WorkInfo> = WorkManager.getInstance(this.requireContext()).getWorkInfosForUniqueWork(getString(R.string.service_id)).get()
         var isRunning: Boolean = false
         if(l.isEmpty()) {
             // Do nothing, as the service never ran
@@ -158,5 +117,62 @@ class MainActivity : AppCompatActivity() {
             this.serviceControlButton?.text = "STOP"
         else
             this.serviceControlButton?.text = "START"
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        var view: View = inflater.inflate(R.layout.fragment_collect, container, false)
+
+        this.serviceStatus = view.findViewById<TextView>(R.id.collectorStatus)
+        this.serviceUptime = view.findViewById<TextView>(R.id.collectorUptime)
+        this.serviceLastAccel = view.findViewById<TextView>(R.id.collectorAccel)
+        this.serviceLastMag = view.findViewById<TextView>(R.id.collectorMag)
+        this.serviceLastGrav = view.findViewById<TextView>(R.id.collectorGrav)
+        this.serviceLastTemp = view.findViewById<TextView>(R.id.collectorTemp)
+        this.serviceLastPress = view.findViewById<TextView>(R.id.collectorPress)
+        this.serviceLastHumi = view.findViewById<TextView>(R.id.collectorHumi)
+        this.serviceLoad = view.findViewById<ProgressBar>(R.id.serviceProgressBar)
+        this.serviceControlButton = view.findViewById(R.id.button)
+        this.serviceControlButton!!.setOnClickListener {
+            if(this.getServiceUIState()) {
+                this.log.info("Stopping collector...")
+                WorkManager.getInstance(this.requireContext()).cancelUniqueWork(getString(R.string.service_id))
+            } else {
+                this.log.info("Starting collector...")
+                WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
+                    getString(R.string.service_id),
+                    ExistingWorkPolicy.REPLACE,
+                    OneTimeWorkRequestBuilder<DataCollectorWorker>().build()
+                )
+            }
+            // Note that the new task is now scheduled to run / queued to cancel - this is not done yet! Meaning the states are not up-to-date yet.
+
+            // TODO Is this replaced by navigation?
+            //val intent = Intent(this.requireContext(), TempClass::class.java)
+            //startActivity(intent)
+        }
+
+        this.updateUI() // Initial view update
+        instance = this // Enable interaction from outside
+
+        // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyways)
+        val handler = Handler()
+        val runnableCode: Runnable = object : Runnable {
+            override fun run() {
+                instance?.updateUI()
+                handler.postDelayed(this, 6000) // Every 6 seconds update fetched status
+            }
+        }
+        handler.post(runnableCode)
+
+        return view
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        instance = null // Disable interaction from outside
     }
 }
