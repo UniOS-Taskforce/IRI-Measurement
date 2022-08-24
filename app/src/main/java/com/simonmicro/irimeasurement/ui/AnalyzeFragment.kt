@@ -37,15 +37,13 @@ class AnalyzeFragment : Fragment() {
 
         // Get the current user position (if permission is granted)
         val mLocationManager = that.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        if (mLocationManager != null) {
-            val locations = mLocationManager.getProviders(true)
-            if (locations.size > 0) {
-                val location = mLocationManager.getLastKnownLocation(locations[0])
-                if (location != null) {
-                    return doubleArrayOf(location.latitude, location.longitude)
-                } else Snackbar.make(constraintLayout!!, "Location currently unavailable", Snackbar.LENGTH_LONG).show()
-            } else Snackbar.make(constraintLayout!!, "No location provider available", Snackbar.LENGTH_LONG).show()
-        } else Snackbar.make(constraintLayout!!, "Location service unavailable", Snackbar.LENGTH_LONG).show()
+        val locations = mLocationManager.getProviders(true)
+        if (locations.size > 0) {
+            val location = mLocationManager.getLastKnownLocation(locations[0])
+            if (location != null) {
+                return doubleArrayOf(location.latitude, location.longitude)
+            } else Snackbar.make(constraintLayout!!, "Location currently unavailable", Snackbar.LENGTH_LONG).show()
+        } else Snackbar.make(constraintLayout!!, "No location provider available", Snackbar.LENGTH_LONG).show()
         return null
     }
 
