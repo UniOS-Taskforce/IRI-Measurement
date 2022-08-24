@@ -253,7 +253,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         this.notificationBuilder = NotificationCompat.Builder(applicationContext, applicationContext.getString(R.string.service_notification_channel_id))
             .setContentTitle(applicationContext.getString(R.string.service_notification_title))
             .setContentText("Starting...")
-            .setSmallIcon(R.mipmap.ic_launcher_round)
+            .setSmallIcon(R.drawable.ic_twotone_fiber_manual_record_24)
             .setOngoing(true)
             .setTimeoutAfter(10000) // Just re-emit it to prevent is from removal - used to "timeout" if we crash badly
             .setOnlyAlertOnce(true) // Silence on repeated updates!
