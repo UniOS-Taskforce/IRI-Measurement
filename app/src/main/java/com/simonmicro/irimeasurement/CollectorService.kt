@@ -7,6 +7,8 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.location.Location
+import android.location.LocationListener
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -16,19 +18,19 @@ import androidx.work.WorkerParameters
 import com.simonmicro.irimeasurement.ui.CollectFragment
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
-import java.lang.Exception
 import java.util.logging.Logger
 
-class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): Worker(appContext, workerParams), SensorEventListener {
+class CollectorService(appContext: Context, workerParams: WorkerParameters): Worker(appContext, workerParams), SensorEventListener, LocationListener {
     enum class DataCollectorWorkerStatus {
         DEAD, PREPARE, ALIVE, SHUTDOWN
     }
 
     private var nId = 0
     private var notificationBuilder: NotificationCompat.Builder? = null
-    private val log = Logger.getLogger(DataCollectorWorker::class.java.name)
+    private val log = Logger.getLogger(CollectorService::class.java.name)
     private lateinit var sensorManager: SensorManager
     private var requestStop: Boolean = false
+    private var locService: LocationService? = null
 
     private var accelSensor: Sensor? = null
     private var tempSensor: Sensor? = null
@@ -100,8 +102,18 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
     var lastHumidityPoint: HumidityPoint? = null
     private var humidityHistory: ArrayList<HumidityPoint> = ArrayList()
 
+    inner class LocationPoint: DataPoint {
+        var location: Location
+
+        constructor(location: Location) {
+            this.location = location
+        }
+    }
+    var lastLocation: LocationPoint? = null
+    private var locationHistory: ArrayList<LocationPoint> = ArrayList()
+
     companion object {
-        var instance: DataCollectorWorker? = null
+        var instance: CollectorService? = null
     }
 
     private fun updateNotificationContent(i: String) {
@@ -110,11 +122,17 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
     }
 
     private fun prepare() {
-        DataCollectorWorker.instance = this
+        CollectorService.instance = this
         this.requestStop = false
         this.status = DataCollectorWorkerStatus.PREPARE
         // Inform the WorkManager that this is a long-running service-task
         setForegroundAsync(createForegroundInfo()) // This will also create our ongoing notification
+        // Check if we got location permissions
+        this.locService = LocationService(applicationContext, true)
+        if(!this.locService!!.hasLocationPermissions())
+            throw RuntimeException("Missing permissions - service can't start!")
+        // Register loop, which is required by this ancient API to process incoming location updates
+        this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this)
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
@@ -161,6 +179,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
             var temperatureHistoryCopy: ArrayList<TemperaturePoint> = temperatureHistory
             var pressureHistoryCopy: ArrayList<PressurePoint> = pressureHistory
             var humidityHistoryCopy: ArrayList<HumidityPoint> = humidityHistory
+            var locationHistoryCopy: ArrayList<LocationPoint> = locationHistory
             // Free current queued values by creating new instances
             this.accelerometerHistory = ArrayList()
             this.gravityHistory = ArrayList()
@@ -169,6 +188,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
             this.temperatureHistory = ArrayList()
             this.pressureHistory = ArrayList()
             this.humidityHistory = ArrayList()
+            this.locationHistory = ArrayList()
             runBlocking { dataPointMutex.unlock() }
             // TODO Persist data
             accelerometerHistoryCopy.clear()
@@ -178,6 +198,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
             magnetometerHistoryCopy.clear()
             pressureHistoryCopy.clear()
             humidityHistoryCopy.clear()
+            locationHistoryCopy.clear()
             this.dataPointCountOnLastFlush = currentDataCount
         }
 
@@ -200,8 +221,9 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
 
     private fun shutdown() {
         this.status = DataCollectorWorkerStatus.SHUTDOWN
-        DataCollectorWorker.instance = null // Communicate to the outside that we are already done...
+        CollectorService.instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
+        this.locService!!.stopLocationUpdates(this)
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
     }
@@ -223,7 +245,7 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
         }
 
         this.status = DataCollectorWorkerStatus.DEAD
-        DataCollectorWorker.instance = null
+        CollectorService.instance = null
         return if(wasRunOK)
             Result.success()
         else
@@ -313,6 +335,16 @@ class DataCollectorWorker(appContext: Context, workerParams: WorkerParameters): 
             this.humidityHistory.add(h)
         } else
             print(event.values)
+        runBlocking { dataPointMutex.unlock() }
+        CollectFragment.asyncUpdateUI()
+    }
+
+    override fun onLocationChanged(location: Location) {
+        runBlocking { dataPointMutex.lock() }
+        this.dataPointCount++
+        var l = LocationPoint(location)
+        this.lastLocation = l
+        this.locationHistory.add(l)
         runBlocking { dataPointMutex.unlock() }
         CollectFragment.asyncUpdateUI()
     }

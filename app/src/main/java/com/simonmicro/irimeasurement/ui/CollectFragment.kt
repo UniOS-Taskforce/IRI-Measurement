@@ -1,7 +1,7 @@
 package com.simonmicro.irimeasurement.ui
 
-import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
@@ -15,7 +15,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.simonmicro.irimeasurement.DataCollectorWorker
+import com.simonmicro.irimeasurement.CollectorService
 import com.simonmicro.irimeasurement.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +24,7 @@ import kotlinx.coroutines.runBlocking
 import java.util.logging.Logger
 
 fun Float.format(digits: Int) = "%.${digits}f".format(this)
+fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 class CollectFragment : Fragment() {
     private val log = Logger.getLogger(CollectFragment::class.java.name)
@@ -36,6 +37,9 @@ class CollectFragment : Fragment() {
     private var serviceLastTemp: TextView? = null
     private var serviceLastPress: TextView? = null
     private var serviceLastHumi: TextView? = null
+    private var serviceLastLoc: TextView? = null
+    private var serviceLastLocAccu: TextView? = null
+    private var serviceLastLocDir: TextView? = null
     private var serviceLoad: ProgressBar? = null
 
     companion object {
@@ -54,7 +58,7 @@ class CollectFragment : Fragment() {
     }
 
     private fun getServiceUIState(): Boolean {
-        return DataCollectorWorker.instance != null && DataCollectorWorker.instance?.status == DataCollectorWorker.DataCollectorWorkerStatus.ALIVE
+        return CollectorService.instance != null && CollectorService.instance?.status == CollectorService.DataCollectorWorkerStatus.ALIVE
     }
 
     private fun updateUI() {
@@ -84,8 +88,8 @@ class CollectFragment : Fragment() {
             else
                 this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
         }
-        if(isRunning && DataCollectorWorker.instance != null) {
-            var service: DataCollectorWorker = DataCollectorWorker.instance!!
+        if(isRunning && CollectorService.instance != null) {
+            var service: CollectorService = CollectorService.instance!!
             this.serviceUptime?.text = ((System.currentTimeMillis() - service.startTime) / 1000).toString() + "s"
             val bufferPercent = ((service.dataPointCount - service.dataPointCountOnLastFlush).toFloat() / service.flushTarget.toFloat() * 100).toInt()
             if(bufferPercent > 100) {
@@ -107,6 +111,16 @@ class CollectFragment : Fragment() {
                 this.serviceLastPress?.text = "${service.lastPressurePoint!!.amount.format(2)} hPa"
             if (service.lastHumidityPoint != null)
                 this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
+            if (service.lastLocation != null) {
+                this.serviceLastLoc?.text = "↑ ${service.lastLocation!!.location.altitude.format(2)} m, lon ${service.lastLocation!!.location.longitude.format(2)} °, lat ${service.lastLocation!!.location.latitude.format(2)} °"
+                var accuracy: String = ""
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    accuracy = "±${service.lastLocation!!.location.bearingAccuracyDegrees.format(2)} °, ↑ ±${service.lastLocation!!.location.verticalAccuracyMeters.format(2)} m, "
+                }
+                accuracy += "±${service.lastLocation!!.location.accuracy.format(2)} m"
+                this.serviceLastLocAccu?.text = accuracy
+                this.serviceLastLocDir?.text = "${service.lastLocation!!.location.bearing.format(2)} °, ${service.lastLocation!!.location.speed.format(2)} m/s"
+            }
             runBlocking { service.dataPointMutex.unlock() }
         }
         if(!isRunning) {
@@ -134,6 +148,9 @@ class CollectFragment : Fragment() {
         this.serviceLastTemp = view.findViewById<TextView>(R.id.collectorTemp)
         this.serviceLastPress = view.findViewById<TextView>(R.id.collectorPress)
         this.serviceLastHumi = view.findViewById<TextView>(R.id.collectorHumi)
+        this.serviceLastLoc = view.findViewById<TextView>(R.id.collectorLoc)
+        this.serviceLastLocAccu = view.findViewById<TextView>(R.id.collectorLocAccu)
+        this.serviceLastLocDir = view.findViewById<TextView>(R.id.collectorLocDir)
         this.serviceLoad = view.findViewById<ProgressBar>(R.id.serviceProgressBar)
         this.serviceControlButton = view.findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
@@ -145,7 +162,7 @@ class CollectFragment : Fragment() {
                 WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
                     getString(R.string.service_id),
                     ExistingWorkPolicy.REPLACE,
-                    OneTimeWorkRequestBuilder<DataCollectorWorker>().build()
+                    OneTimeWorkRequestBuilder<CollectorService>().build()
                 )
             }
             // Note that the new task is now scheduled to run / queued to cancel - this is not done yet! Meaning the states are not up-to-date yet.
