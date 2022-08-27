@@ -7,6 +7,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Criteria
+import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Looper
@@ -33,7 +34,7 @@ class LocationService {
     }
 
     @SuppressLint("MissingPermission")
-    fun getUserLocation(): DoubleArray? {
+    fun getUserLocation(): Location? {
         if(!this.hasLocationPermissions())
             return null
 
@@ -43,7 +44,7 @@ class LocationService {
         if (provider != null) {
             val location = locationManager.getLastKnownLocation(provider)
             if (location != null)
-                return doubleArrayOf(location.latitude, location.longitude)
+                return location
             this.showWarning("Location currently unavailable...")
         } else
             this.showWarning("No location provider available?!")
@@ -142,8 +143,8 @@ class LocationService {
         if (showExplanation) {
             val builder = AlertDialog.Builder(this.context)
             builder.setTitle("Permission" + (if (permissionsToRequest.size > 1) "s" else "") + " required!")
-                .setMessage("As you may already have noted, using an GEO-application will require using your precise location." +
-                "Please grant its usage - otherwise the app may won't be able to proceed...")
+                .setMessage("As you may already have noted, using a GEO-application will require using your PRECISE location. " +
+                "Please grant its usage (make sure to also allow precise location access!) - otherwise the app may won't be able to proceed...")
             val alert = builder.create()
             alert.show()
         } else

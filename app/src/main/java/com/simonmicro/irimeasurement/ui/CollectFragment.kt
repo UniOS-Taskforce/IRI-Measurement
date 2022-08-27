@@ -16,6 +16,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.simonmicro.irimeasurement.CollectorService
+import com.simonmicro.irimeasurement.HomeScreen
 import com.simonmicro.irimeasurement.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,6 +42,7 @@ class CollectFragment : Fragment() {
     private var serviceLastLocAccu: TextView? = null
     private var serviceLastLocDir: TextView? = null
     private var serviceLoad: ProgressBar? = null
+    private var done: Boolean = false
 
     companion object {
         private var instance: CollectFragment? = null
@@ -157,7 +159,7 @@ class CollectFragment : Fragment() {
             if(this.getServiceUIState()) {
                 this.log.info("Stopping collector...")
                 WorkManager.getInstance(this.requireContext()).cancelUniqueWork(getString(R.string.service_id))
-            } else {
+            } else if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
                 this.log.info("Starting collector...")
                 WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
                     getString(R.string.service_id),
@@ -176,9 +178,12 @@ class CollectFragment : Fragment() {
         instance = this // Enable interaction from outside
 
         // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyways)
+        this.done = false
+        var that = this
         val handler = Handler()
         val runnableCode: Runnable = object : Runnable {
             override fun run() {
+                if(that.done) return
                 instance?.updateUI()
                 handler.postDelayed(this, 6000) // Every 6 seconds update fetched status
             }
@@ -191,5 +196,6 @@ class CollectFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         instance = null // Disable interaction from outside
+        this.done = true
     }
 }
