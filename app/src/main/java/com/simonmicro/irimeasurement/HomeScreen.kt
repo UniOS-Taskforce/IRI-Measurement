@@ -18,9 +18,10 @@ class HomeScreen : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")"
 
         val navView: BottomNavigationView = binding.navView
 
