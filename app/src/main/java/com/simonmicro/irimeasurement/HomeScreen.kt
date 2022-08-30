@@ -36,7 +36,7 @@ class HomeScreen : AppCompatActivity() {
         // Init action bar
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")"
+        binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME
 
         // Prepare the UI
         supportActionBar!!.show()
