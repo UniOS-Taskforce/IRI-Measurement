@@ -5,7 +5,6 @@ import android.widget.AdapterView.OnItemClickListener
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
-import com.simonmicro.irimeasurement.services.StorageCollection
 import com.simonmicro.irimeasurement.services.StorageService
 import com.simonmicro.irimeasurement.ui.CollectionView
 import com.simonmicro.irimeasurement.ui.CollectionViewAdapter
@@ -16,9 +15,9 @@ class CollectionManager : AppCompatActivity() {
         setContentView(R.layout.activity_collection_manager)
 
         // Copy over the current collections into their view
-        var l: ArrayList<StorageCollection> = StorageService.listCollections()
+        var l: ArrayList<Collection> = StorageService.listCollections()
         var a: ArrayList<CollectionView> = ArrayList()
-        for(c: StorageCollection in l)
+        for(c: Collection in l)
             a.add(CollectionView(c))
 
         val numbersArrayAdapter = CollectionViewAdapter(this, a)

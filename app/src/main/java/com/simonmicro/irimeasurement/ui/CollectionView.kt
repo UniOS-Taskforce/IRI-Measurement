@@ -6,9 +6,9 @@ import android.widget.TextView
 import com.google.android.material.snackbar.Snackbar
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.services.CollectorService
-import com.simonmicro.irimeasurement.services.StorageCollection
+import com.simonmicro.irimeasurement.Collection
 
-class CollectionView(var collection: StorageCollection) {
+class CollectionView(var collection: Collection) {
     private fun isCollectionInUse(view: View): Boolean {
         val b: Boolean = (CollectorService.instance != null && CollectorService.instance!!.collection!!.id == this.collection.id)
         if(b) Snackbar.make(view, "Collection is in use!", Snackbar.LENGTH_LONG).show()

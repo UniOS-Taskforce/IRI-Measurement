@@ -16,6 +16,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.simonmicro.irimeasurement.R
+import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.ui.CollectFragment
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -34,7 +35,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     private lateinit var sensorManager: SensorManager
     private var requestStop: Boolean = false
     private var locService: LocationService? = null
-    var collection: StorageCollection? = null
+    var collection: Collection? = null
 
     private var accelSensor: Sensor? = null
     private var tempSensor: Sensor? = null
@@ -136,7 +137,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         if(!this.locService!!.hasLocationPermissions())
             throw RuntimeException("Missing permissions - service can't start!")
         // Create new collection for this run
-        this.collection = StorageCollection(UUID.randomUUID())
+        this.collection = Collection(UUID.randomUUID())
         this.collection!!.create()
         // Register loop, which is required by this ancient API to process incoming location updates
         this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this)

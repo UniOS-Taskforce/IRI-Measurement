@@ -1,14 +1,15 @@
-package com.simonmicro.irimeasurement.services
+package com.simonmicro.irimeasurement
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.simonmicro.irimeasurement.services.StorageService
 import java.io.File
 import java.nio.file.Path
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 
-class StorageCollection(val id: UUID) {
+class Collection(val id: UUID) {
     data class CollectionMeta (
         var creation: Date = Date()
     )

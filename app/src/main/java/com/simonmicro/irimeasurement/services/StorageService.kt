@@ -3,6 +3,7 @@ package com.simonmicro.irimeasurement.services
 import android.content.Context
 import android.os.storage.StorageManager
 import androidx.core.content.getSystemService
+import com.simonmicro.irimeasurement.Collection
 import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
@@ -64,12 +65,12 @@ class StorageService {
             return ret
         }
 
-        fun listCollections(): ArrayList<StorageCollection> {
+        fun listCollections(): ArrayList<Collection> {
             var all: File = this.getCollectionsRoot()
-            var list: ArrayList<StorageCollection> = ArrayList()
+            var list: ArrayList<Collection> = ArrayList()
             for(it: File in all.listFiles()) {
                 if(it.isDirectory) {
-                    list.add(StorageCollection(UUID.fromString(it.name)))
+                    list.add(Collection(UUID.fromString(it.name)))
                 }
             }
             return list
