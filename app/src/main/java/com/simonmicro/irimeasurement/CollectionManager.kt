@@ -3,6 +3,7 @@ package com.simonmicro.irimeasurement
 import android.os.Bundle
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.ListView
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
@@ -27,7 +28,10 @@ class CollectionManager : AppCompatActivity() {
         numbersListView.adapter = numbersArrayAdapter
         numbersListView.onItemClickListener = OnItemClickListener { _, view, position, _ ->
             val cv: CollectionView = a[position]
-            Snackbar.make(view, cv.collection.toSnackbarString(), Snackbar.LENGTH_LONG).show()
+            val snack: Snackbar = Snackbar.make(view, cv.collection.toSnackbarString(), Snackbar.LENGTH_LONG)
+            val snackText: TextView = snack.view.findViewById(com.google.android.material.R.id.snackbar_text)
+            snackText.maxLines = 12
+            snack.show()
         }
     }
 
@@ -39,12 +43,30 @@ class CollectionManager : AppCompatActivity() {
         val collection = this.collectionToExportViaContract!!
         this.collectionToExportViaContract = null
         // Do the export
-        Snackbar.make(findViewById(R.id.collectionsList), "Starting export of ${collection.id}...", Snackbar.LENGTH_LONG).show()
-        val out: OutputStream = this.contentResolver?.openOutputStream(uri)!!
-        collection.export(out)
-        out.flush()
-        out.close()
-        Snackbar.make(findViewById(R.id.collectionsList), "Finished export of ${collection.id}", Snackbar.LENGTH_LONG).show()
+        Thread {
+            try {
+                Snackbar.make(
+                    findViewById(R.id.collectionsList),
+                    "Starting export of ${collection.id}...",
+                    Snackbar.LENGTH_LONG
+                ).show()
+                val out: OutputStream = this.contentResolver?.openOutputStream(uri)!!
+                collection.export(out)
+                out.flush()
+                out.close()
+                Snackbar.make(
+                    findViewById(R.id.collectionsList),
+                    "Finished export of ${collection.id}",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            } catch (e: Exception) {
+                Snackbar.make(
+                    findViewById(R.id.collectionsList),
+                    "Export of ${collection.id} failed: " + e.message,
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }.start()
     }
 
     fun export(collection: Collection) {

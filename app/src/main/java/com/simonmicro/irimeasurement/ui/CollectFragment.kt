@@ -118,14 +118,12 @@ class CollectFragment : Fragment() {
             if (service.lastHumidityPoint != null)
                 this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
             if (service.lastLocation != null) {
-                this.serviceLastLoc?.text = "↑ ${service.lastLocation!!.location.altitude.format(2)} m, lon ${service.lastLocation!!.location.longitude.format(2)} °, lat ${service.lastLocation!!.location.latitude.format(2)} °"
+                this.serviceLastLoc?.text = "↑ ${service.lastLocation!!.locHeight.format(2)} m, lon ${service.lastLocation!!.locLon.format(2)} °, lat ${service.lastLocation!!.locLat.format(2)} °"
                 var accuracy: String = ""
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    accuracy = "±${service.lastLocation!!.location.bearingAccuracyDegrees.format(2)} °, ↑ ±${service.lastLocation!!.location.verticalAccuracyMeters.format(2)} m, "
-                }
-                accuracy += "±${service.lastLocation!!.location.accuracy.format(2)} m"
+                accuracy = "±${service.lastLocation!!.accuDir.format(2)} °, ↑ ±${service.lastLocation!!.accuHeight.format(2)} m, "
+                accuracy += "±${service.lastLocation!!.accuLonLat.format(2)} m"
                 this.serviceLastLocAccu?.text = accuracy
-                this.serviceLastLocDir?.text = "${service.lastLocation!!.location.bearing.format(2)} °, ${service.lastLocation!!.location.speed.format(2)} m/s"
+                this.serviceLastLocDir?.text = "${service.lastLocation!!.dir.format(2)} °, ${service.lastLocation!!.dirSpeed.format(2)} m/s"
             }
             runBlocking { service.dataPointMutex.unlock() }
         }

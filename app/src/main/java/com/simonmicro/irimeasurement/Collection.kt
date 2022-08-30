@@ -3,22 +3,27 @@ package com.simonmicro.irimeasurement
 import android.R.attr.data
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.services.StorageService
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.OutputStream
+import java.lang.RuntimeException
 import java.nio.file.Path
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.collections.ArrayList
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
 
-
 class Collection(val id: UUID) {
     data class CollectionMeta (
-        var creation: Date = Date()
+        var creation: Date = Date(),
+        var pointCount: Long = 0,
+        var dataSets: ArrayList<String> = ArrayList(),
+        var completed: Boolean = false
     )
 
     private val path: Path = Path(StorageService.getCollectionsRoot().absolutePath.toString(), this.id.toString())
@@ -50,7 +55,7 @@ class Collection(val id: UUID) {
     }
 
     fun toSnackbarString(): String {
-        return "ID: ${this.id}\nFrom: ${this.meta.creation}"
+        return "ID: ${this.id}\nFrom: ${this.meta.creation}\nPoints: ${this.meta.pointCount}\nSets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\nCompleted: ${this.meta.completed}"
     }
 
     fun getMeta(): CollectionMeta {
@@ -74,7 +79,12 @@ class Collection(val id: UUID) {
         this.path.toFile().delete()
     }
 
-    fun addFileToZip(out: ZipOutputStream, file: File) {
+    fun completed() {
+        this.meta.completed = true
+        this.writeMetaData()
+    }
+
+    private fun addFileToZip(out: ZipOutputStream, file: File) {
         val bufferSize = 2048
         var fi: FileInputStream = file.inputStream()
         var buffer: ByteArray = ByteArray(bufferSize)
@@ -95,5 +105,22 @@ class Collection(val id: UUID) {
                 this.addFileToZip(out, file)
         }
         out.close()
+    }
+
+    fun <T: CollectorService.DataPoint> addPoints(points: ArrayList<T>) {
+        if(this.meta.completed)
+            throw RuntimeException("You tried to add to a completed collection")
+        if(points.size == 0)
+            return
+        var out: File = Path(this.path.toString(), points[0].getName() + ".csv").toFile()
+        if(!out.isFile) {
+            out.appendText(points[0].getHeader() + "\n")
+        }
+        for(point in points)
+            out.appendText(point.getRow() + "\n")
+        this.meta.pointCount += points.size
+        if(points[0].getName() !in this.meta.dataSets)
+            this.meta.dataSets.add(points[0].getName())
+        this.writeMetaData()
     }
 }

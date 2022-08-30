@@ -53,65 +53,128 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     var dataPointMutex = Mutex()
 
-    open inner class DataPoint {
+    abstract inner class DataPoint {
         var time: Long = System.currentTimeMillis()
+
+        abstract fun getName(): String
+        open fun getHeader(): String {
+            return "time"
+        }
+        open fun getRow(): String {
+            return this.time.toString()
+        }
     }
 
-    inner class AccelerometerPoint: DataPoint() {
-        var accelX: Float = 0.0f
-        var accelY: Float = 0.0f
-        var accelZ: Float = 0.0f
+    inner class AccelerometerPoint(var accelX: Float, var accelY: Float, var accelZ: Float): DataPoint() {
+        override fun getName(): String {
+            return "accelerometer"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";X;Y;Z"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.accelX};${this.accelY};${this.accelZ}"
+        }
     }
     var lastAccelerometerPoint: AccelerometerPoint? = null
     private var accelerometerHistory: ArrayList<AccelerometerPoint> = ArrayList()
 
-    inner class GravityPoint: DataPoint() {
-        var accelX: Float = 0.0f
-        var accelY: Float = 0.0f
-        var accelZ: Float = 0.0f
+    inner class GravityPoint(var accelX: Float, var accelY: Float, var accelZ: Float): DataPoint() {
+        override fun getName(): String {
+            return "gravity"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";X;Y;Z"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.accelX};${this.accelY};${this.accelZ}"
+        }
     }
     var lastGravityPoint: GravityPoint? = null
     private var gravityHistory: ArrayList<GravityPoint> = ArrayList()
 
-    inner class MagnetometerPoint: DataPoint() {
-        var fieldX: Float = 0.0f
-        var fieldY: Float = 0.0f
-        var fieldZ: Float = 0.0f
+    inner class MagnetometerPoint(var fieldX: Float, var fieldY: Float, var fieldZ: Float): DataPoint() {
+        override fun getName(): String {
+            return "magnetometer"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";X;Y;Z"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.fieldX};${this.fieldY};${this.fieldZ}"
+        }
     }
     var lastMagnetometerPoint: MagnetometerPoint? = null
     private var magnetometerHistory: ArrayList<MagnetometerPoint> = ArrayList()
 
-    inner class GyrometerPoint: DataPoint() {
-        var rotVelX: Float = 0.0f
-        var rotVelY: Float = 0.0f
-        var rotVelZ: Float = 0.0f
+    inner class GyrometerPoint(var rotVelX: Float, var rotVelY: Float, var rotVelZ: Float): DataPoint() {
+        override fun getName(): String {
+            return "gyrometer"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";X;Y;Z"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.rotVelX};${this.rotVelY};${this.rotVelZ}"
+        }
     }
     var lastGyrometerPoint: GyrometerPoint? = null
     private var gyrometerHistory: ArrayList<GyrometerPoint> = ArrayList()
 
-    inner class TemperaturePoint: DataPoint() {
-        var amount: Float = 0.0f
+    inner class TemperaturePoint(var amount: Float): DataPoint() {
+        override fun getName(): String {
+            return "temperature"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";value"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.amount}"
+        }
     }
     var lastTemperaturePoint: TemperaturePoint? = null
     private var temperatureHistory: ArrayList<TemperaturePoint> = ArrayList()
 
-    inner class PressurePoint: DataPoint() {
-        var amount: Float = 0.0f
+    inner class PressurePoint(var amount: Float): DataPoint() {
+        override fun getName(): String {
+            return "pressure"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";value"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.amount}"
+        }
     }
     var lastPressurePoint: PressurePoint? = null
     private var pressureHistory: ArrayList<PressurePoint> = ArrayList()
 
-    inner class HumidityPoint: DataPoint() {
-        var amount: Float = 0.0f
+    inner class HumidityPoint(var amount: Float): DataPoint() {
+        override fun getName(): String {
+            return "humidity"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";value"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${this.amount}"
+        }
     }
     var lastHumidityPoint: HumidityPoint? = null
     private var humidityHistory: ArrayList<HumidityPoint> = ArrayList()
 
-    inner class LocationPoint: DataPoint {
-        var location: Location
+    inner class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: Double,
+                              var accuDir: Float, var accuHeight: Float, var accuLonLat: Float,
+                              var dir: Float, var dirSpeed: Float): DataPoint() {
 
-        constructor(location: Location) {
-            this.location = location
+        override fun getName(): String {
+            return "location"
+        }
+        override fun getHeader(): String {
+            return super.getHeader() + ";location height;location longitude;location latitude;accuracy direction;accuracy height;accuracy longitude latitude; direction; direction speed"
+        }
+        override fun getRow(): String {
+            return super.getRow() + "${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed}"
         }
     }
     var lastLocation: LocationPoint? = null
@@ -198,15 +261,14 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.humidityHistory = ArrayList()
             this.locationHistory = ArrayList()
             runBlocking { dataPointMutex.unlock() }
-            // TODO Persist data
-            accelerometerHistoryCopy.clear()
-            temperatureHistoryCopy.clear()
-            gravityHistoryCopy.clear()
-            gyrometerHistoryCopy.clear()
-            magnetometerHistoryCopy.clear()
-            pressureHistoryCopy.clear()
-            humidityHistoryCopy.clear()
-            locationHistoryCopy.clear()
+            this.collection!!.addPoints<AccelerometerPoint>(accelerometerHistoryCopy)
+            this.collection!!.addPoints<TemperaturePoint>(temperatureHistoryCopy)
+            this.collection!!.addPoints<GravityPoint>(gravityHistoryCopy)
+            this.collection!!.addPoints<GyrometerPoint>(gyrometerHistoryCopy)
+            this.collection!!.addPoints<MagnetometerPoint>(magnetometerHistoryCopy)
+            this.collection!!.addPoints<PressurePoint>(pressureHistoryCopy)
+            this.collection!!.addPoints<HumidityPoint>(humidityHistoryCopy)
+            this.collection!!.addPoints<LocationPoint>(locationHistoryCopy)
             this.dataPointCountOnLastFlush = currentDataCount
         }
 
@@ -220,6 +282,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.log.warning("Running ONLY for 300 seconds!") // TODO Change this to unlimited... If stable.
         var wantProceed = true
         while (!this.requestStop && wantProceed) {
+            instance = this // Repeat this every loop, as sometimes this reference gets lost, so the UI fails to recognize the services state
             // Update notification as first step, so we don't show it in case the user requested this worker to stop
             NotificationManagerCompat.from(applicationContext).notify(nId, this.notificationBuilder!!.build()) // Update notification, as we are still alive
             wantProceed = this.loop()
@@ -231,6 +294,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.status = DataCollectorWorkerStatus.SHUTDOWN
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
+        this.collection!!.completed()
         this.locService!!.stopLocationUpdates(this)
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
@@ -299,46 +363,31 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         runBlocking { dataPointMutex.lock() }
         this.dataPointCount++
         if (event.sensor.type == accelSensor?.type) {
-            var a = AccelerometerPoint()
-            a.accelX = event.values[0]
-            a.accelY = event.values[1]
-            a.accelZ = event.values[2]
+            var a = AccelerometerPoint(event.values[0], event.values[1], event.values[2])
             this.lastAccelerometerPoint = a
             this.accelerometerHistory.add(a)
         } else if (event.sensor.type == gravSensor?.type) {
-            var g = GravityPoint()
-            g.accelX = event.values[0]
-            g.accelY = event.values[1]
-            g.accelZ = event.values[2]
+            var g = GravityPoint(event.values[0], event.values[1], event.values[2])
             this.lastGravityPoint = g
             this.gravityHistory.add(g)
         } else if (event.sensor.type == magSensor?.type) {
-            var m = MagnetometerPoint()
-            m.fieldX = event.values[0]
-            m.fieldY = event.values[1]
-            m.fieldZ = event.values[2]
+            var m = MagnetometerPoint(event.values[0], event.values[1], event.values[2])
             this.lastMagnetometerPoint = m
             this.magnetometerHistory.add(m)
         } else if (event.sensor.type == gyroSensor?.type) {
-            var g = GyrometerPoint()
-            g.rotVelX = event.values[0]
-            g.rotVelY = event.values[1]
-            g.rotVelZ = event.values[2]
+            var g = GyrometerPoint(event.values[0], event.values[1], event.values[2])
             this.lastGyrometerPoint = g
             this.gyrometerHistory.add(g)
         } else if (event.sensor.type == tempSensor?.type) {
-            var t = TemperaturePoint()
-            t.amount = event.values[0]
+            var t = TemperaturePoint(event.values[0])
             this.lastTemperaturePoint = t
             this.temperatureHistory.add(t)
         } else if (event.sensor.type == pressSensor?.type) {
-            var p = PressurePoint()
-            p.amount = event.values[0]
+            var p = PressurePoint(event.values[0])
             this.lastPressurePoint = p
             this.pressureHistory.add(p)
         } else if (event.sensor.type == humiSensor?.type) {
-            var h = HumidityPoint()
-            h.amount = event.values[0]
+            var h = HumidityPoint(event.values[0])
             this.lastHumidityPoint = h
             this.humidityHistory.add(h)
         } else
@@ -350,7 +399,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     override fun onLocationChanged(location: Location) {
         runBlocking { dataPointMutex.lock() }
         this.dataPointCount++
-        var l = LocationPoint(location)
+        var l = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed)
         this.lastLocation = l
         this.locationHistory.add(l)
         runBlocking { dataPointMutex.unlock() }
