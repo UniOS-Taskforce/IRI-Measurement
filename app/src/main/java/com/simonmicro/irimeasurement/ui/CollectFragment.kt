@@ -33,6 +33,7 @@ class CollectFragment : Fragment() {
     private var serviceControlButton: Button? = null
     private var serviceStatus: TextView? = null
     private var serviceUptime: TextView? = null
+    private var serviceCollectionId: TextView? = null
     private var serviceFreeSpace: TextView? = null
     private var serviceLastAccel: TextView? = null
     private var serviceLastGrav: TextView? = null
@@ -102,6 +103,7 @@ class CollectFragment : Fragment() {
                 this.serviceLoad?.isIndeterminate = false
                 this.serviceLoad?.progress = bufferPercent
             }
+            this.serviceCollectionId?.text = service.collection?.id.toString()
             runBlocking { service.dataPointMutex.lock() }
             if (service.lastAccelerometerPoint != null)
                 this.serviceLastAccel?.text = "(${service.lastAccelerometerPoint!!.accelX.format(2)}, ${service.lastAccelerometerPoint!!.accelY.format(2)}, ${service.lastAccelerometerPoint!!.accelZ.format(2)}) m/s²"
@@ -147,6 +149,7 @@ class CollectFragment : Fragment() {
 
         this.serviceStatus = view.findViewById<TextView>(R.id.collectorStatus)
         this.serviceUptime = view.findViewById<TextView>(R.id.collectorUptime)
+        this.serviceCollectionId = view.findViewById<TextView>(R.id.collectionId)
         this.serviceFreeSpace = view.findViewById<TextView>(R.id.freeSpace)
         this.serviceLastAccel = view.findViewById<TextView>(R.id.collectorAccel)
         this.serviceLastMag = view.findViewById<TextView>(R.id.collectorMag)
@@ -172,10 +175,6 @@ class CollectFragment : Fragment() {
                 )
             }
             // Note that the new task is now scheduled to run / queued to cancel - this is not done yet! Meaning the states are not up-to-date yet.
-
-            // TODO Is this replaced by navigation?
-            //val intent = Intent(this.requireContext(), TempClass::class.java)
-            //startActivity(intent)
         }
 
         this.updateUI() // Initial view update

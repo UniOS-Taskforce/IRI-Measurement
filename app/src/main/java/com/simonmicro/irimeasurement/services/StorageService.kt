@@ -3,23 +3,22 @@ package com.simonmicro.irimeasurement.services
 import android.content.Context
 import android.os.storage.StorageManager
 import androidx.core.content.getSystemService
+import java.io.File
 import java.util.*
+import kotlin.collections.ArrayList
 
 class StorageService {
     companion object {
-        private var manager: StorageManager? = null
+        private var context: Context? = null
         private var filesUuid: UUID? = null
 
         fun initWithContext(context: Context) {
-            manager = context.getSystemService<StorageManager>()!!
-            filesUuid = manager!!.getUuidForPath(context.filesDir)
+            this.context = context
+            this.filesUuid = context.getSystemService<StorageManager>()!!.getUuidForPath(context.filesDir)
         }
 
-        /**
-         * These bytes are may not free and must be allocated to get freed by the system
-         */
         fun getFreeSpaceBytes(): Long {
-            return manager?.getAllocatableBytes(filesUuid!!)!!
+            return context!!.filesDir.usableSpace
         }
 
         fun getFreeSpaceBetterString(): String {
@@ -56,6 +55,24 @@ class StorageService {
                 unit = "GB"
             }
             return "$free $unit"
+        }
+
+        fun getCollectionsRoot(): File {
+            this.context!!.filesDir.mkdir()
+            var ret = File(this.context!!.filesDir, "collections")
+            ret.mkdir()
+            return ret
+        }
+
+        fun listCollections(): ArrayList<StorageCollection> {
+            var all: File = this.getCollectionsRoot()
+            var list: ArrayList<StorageCollection> = ArrayList()
+            for(it: File in all.listFiles()) {
+                if(it.isDirectory) {
+                    list.add(StorageCollection(UUID.fromString(it.name)))
+                }
+            }
+            return list
         }
     }
 }

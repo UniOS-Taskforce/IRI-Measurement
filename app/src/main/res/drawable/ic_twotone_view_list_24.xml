@@ -4,6 +4,6 @@
     <!-- Note the tint! Otherwise the icon is not visible on the apps icon background -->
     <path android:fillAlpha="0.3"
         android:fillColor="@android:color/white"
-        android:pathData="M12,18c3.31,0 6,-2.69 6,-6s-2.69,-6 -6,-6 -6,2.69 -6,6 2.69,6 6,6z" android:strokeAlpha="0.3"/>
-    <path android:fillColor="@android:color/white" android:pathData="M12,20c4.42,0 8,-3.58 8,-8s-3.58,-8 -8,-8 -8,3.58 -8,8 3.58,8 8,8zM12,6c3.31,0 6,2.69 6,6s-2.69,6 -6,6 -6,-2.69 -6,-6 2.69,-6 6,-6z"/>
+        android:pathData="M5,11h2v2L5,13zM5,15h2v2L5,17zM5,7h2v2L5,9zM9,7h9v2L9,9zM9,15h9v2L9,17zM9,11h9v2L9,13z" android:strokeAlpha="0.3"/>
+    <path android:fillColor="@android:color/white" android:pathData="M3,5v14h17L20,5L3,5zM7,17L5,17v-2h2v2zM7,13L5,13v-2h2v2zM7,9L5,9L5,7h2v2zM18,17L9,17v-2h9v2zM18,13L9,13v-2h9v2zM18,9L9,9L9,7h9v2z"/>
 </vector>

@@ -1,4 +1,4 @@
-package com.simonmicro.irimeasurement
+package com.simonmicro.irimeasurement.services
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -81,8 +81,8 @@ class LocationService {
         this.log.info(msg)
         if(!this.showWarning)
             return
-        if(LocationService.snackbarTarget != null) {
-            val snackBar = Snackbar.make(LocationService.snackbarTarget!!, msg, Snackbar.LENGTH_INDEFINITE)
+        if(snackbarTarget != null) {
+            val snackBar = Snackbar.make(snackbarTarget!!, msg, Snackbar.LENGTH_INDEFINITE)
             snackBar.duration = msg.length * (1000 / 4)
             snackBar.setAction("Dismiss") {
                 snackBar.dismiss()

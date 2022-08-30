@@ -1,13 +1,18 @@
 package com.simonmicro.irimeasurement
 
+import android.content.Intent
 import android.os.Bundle
-import com.google.android.material.bottomnavigation.BottomNavigationView
+import android.view.Menu
+import android.view.MenuItem
+import android.view.Window
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.simonmicro.irimeasurement.databinding.ActivityHomeScreenBinding
+import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
 
 class HomeScreen : AppCompatActivity() {
@@ -19,6 +24,7 @@ class HomeScreen : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.requestFeature(Window.FEATURE_ACTION_BAR)
 
         // Initialize the snackbar target, so the service can remind the user to grant permissions
         LocationService.snackbarTarget = this.findViewById(R.id.container)
@@ -27,11 +33,13 @@ class HomeScreen : AppCompatActivity() {
         // Init other services
         StorageService.initWithContext(this)
 
-        // Prepare the UI
+        // Init action bar
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")"
 
+        // Prepare the UI
+        supportActionBar!!.show()
         val navView: BottomNavigationView = binding.navView
 
         val navController = findNavController(R.id.nav_host_fragment_activity_home_screen)
@@ -44,6 +52,21 @@ class HomeScreen : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return if(item.itemId == R.id.menu_main_ViewCollections) {
+            val intent = Intent(this, CollectionManager::class.java)
+            startActivity(intent)
+            true
+        } else
+            super.onOptionsItemSelected(item)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

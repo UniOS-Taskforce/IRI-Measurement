@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.simonmicro.irimeasurement.*
+import com.simonmicro.irimeasurement.services.LocationService
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -15,7 +16,6 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import java.util.logging.Logger
-
 
 class AnalyzeFragment : Fragment() {
     private var map: MapView? = null
