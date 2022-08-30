@@ -7,8 +7,9 @@ import com.google.android.material.snackbar.Snackbar
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.Collection
+import com.simonmicro.irimeasurement.CollectionManager
 
-class CollectionView(var collection: Collection) {
+class CollectionView(var collection: Collection, private var activity: CollectionManager) {
     private fun isCollectionInUse(view: View): Boolean {
         val b: Boolean = (CollectorService.instance != null && CollectorService.instance!!.collection!!.id == this.collection.id)
         if(b) Snackbar.make(view, "Collection is in use!", Snackbar.LENGTH_LONG).show()
@@ -26,7 +27,7 @@ class CollectionView(var collection: Collection) {
         var delBtn: ImageButton = view.findViewById<ImageButton>(R.id.delete)
         savBtn.setOnClickListener {
             if(!this.isCollectionInUse(view)) {
-                TODO("Not implemented yet")
+                activity.export(collection)
             }
         }
         delBtn.setOnClickListener {

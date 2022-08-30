@@ -28,7 +28,7 @@ class HomeScreen : AppCompatActivity() {
 
         // Initialize the snackbar target, so the service can remind the user to grant permissions
         LocationService.snackbarTarget = this.findViewById(R.id.container)
-        HomeScreen.locService = LocationService(this, true)
+        HomeScreen.locService = LocationService(this)
 
         // Init other services
         StorageService.initWithContext(this)

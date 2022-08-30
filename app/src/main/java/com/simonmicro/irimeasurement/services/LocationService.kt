@@ -28,9 +28,9 @@ class LocationService {
         var snackbarTarget: View? = null
     }
 
-    constructor(context: Context, showWarnings: Boolean) {
+    constructor(context: Context) {
         this.context = context
-        this.showWarning = showWarnings
+        this.showWarning = true // Previously optional - now required!
     }
 
     @SuppressLint("MissingPermission")
@@ -117,7 +117,6 @@ class LocationService {
 
         // Try to get them!
         if (permissionsToRequest.size > 0) {
-            this.log.warning("Huh?")
             ActivityCompat.requestPermissions(activity, permissionsToRequest.toTypedArray(), REQUEST_PERMISSIONS_REQUEST_CODE)
             return false
         }
@@ -130,7 +129,6 @@ class LocationService {
     fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if(requestCode != REQUEST_PERMISSIONS_REQUEST_CODE)
             return
-        this.log.warning("Heyho!")
         val permissionsToRequest = ArrayList<String>()
         var showExplanation = false
         for (i in grantResults.indices) if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {

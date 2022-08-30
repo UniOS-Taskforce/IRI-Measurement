@@ -1,13 +1,20 @@
 package com.simonmicro.irimeasurement
 
+import android.R.attr.data
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simonmicro.irimeasurement.services.StorageService
+import java.io.BufferedInputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.OutputStream
 import java.nio.file.Path
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
+
 
 class Collection(val id: UUID) {
     data class CollectionMeta (
@@ -17,6 +24,12 @@ class Collection(val id: UUID) {
     private val path: Path = Path(StorageService.getCollectionsRoot().absolutePath.toString(), this.id.toString())
     private val metaPath: Path = Path(this.path.toString(), "metadata.json")
     private var meta: CollectionMeta = CollectionMeta()
+
+    companion object {
+        fun import(): Collection {
+            TODO("Not implemented: Collection import")
+        }
+    }
 
     init {
         this.readMetaData()
@@ -59,5 +72,28 @@ class Collection(val id: UUID) {
         }
         // Delete collection folder itself
         this.path.toFile().delete()
+    }
+
+    fun addFileToZip(out: ZipOutputStream, file: File) {
+        val bufferSize = 2048
+        var fi: FileInputStream = file.inputStream()
+        var buffer: ByteArray = ByteArray(bufferSize)
+        val origin = BufferedInputStream(fi, bufferSize)
+        val entry = ZipEntry(file.name)
+        out.putNextEntry(entry)
+        var count: Int
+        while (origin.read(buffer, 0, bufferSize).also { count = it } != -1) {
+            out.write(buffer, 0, count)
+        }
+        origin.close()
+    }
+
+    fun export(output: OutputStream) {
+        var out = ZipOutputStream(output)
+        for(file: File in this.path.toFile().listFiles()) {
+            if(file.isFile)
+                this.addFileToZip(out, file)
+        }
+        out.close()
     }
 }

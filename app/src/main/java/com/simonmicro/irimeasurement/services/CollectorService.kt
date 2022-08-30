@@ -133,7 +133,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         // Inform the WorkManager that this is a long-running service-task
         setForegroundAsync(createForegroundInfo()) // This will also create our ongoing notification
         // Check if we got location permissions
-        this.locService = LocationService(applicationContext, true)
+        this.locService = LocationService(applicationContext)
         if(!this.locService!!.hasLocationPermissions())
             throw RuntimeException("Missing permissions - service can't start!")
         // Create new collection for this run
