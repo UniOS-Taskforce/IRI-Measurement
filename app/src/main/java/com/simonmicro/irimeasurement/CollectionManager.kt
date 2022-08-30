@@ -33,12 +33,14 @@ class CollectionManager : AppCompatActivity() {
 
     private var collectionToExportViaContract: Collection? = null
     private val exportCollectionContract = registerForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if(uri == null)
+            return@registerForActivityResult
         // Grab the current collection, as it could take a while...
         val collection = this.collectionToExportViaContract!!
         this.collectionToExportViaContract = null
         // Do the export
         Snackbar.make(findViewById(R.id.collectionsList), "Starting export of ${collection.id}...", Snackbar.LENGTH_LONG).show()
-        val out: OutputStream = this.contentResolver?.openOutputStream(uri!!)!!
+        val out: OutputStream = this.contentResolver?.openOutputStream(uri)!!
         collection.export(out)
         out.flush()
         out.close()
