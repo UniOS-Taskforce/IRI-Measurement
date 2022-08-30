@@ -1,4 +1,4 @@
-package com.simonmicro.irimeasurement
+package com.simonmicro.irimeasurement.services
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -15,6 +15,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.simonmicro.irimeasurement.LocationService
+import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.ui.CollectFragment
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -122,7 +124,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     }
 
     private fun prepare() {
-        CollectorService.instance = this
+        instance = this
         this.requestStop = false
         this.status = DataCollectorWorkerStatus.PREPARE
         // Inform the WorkManager that this is a long-running service-task
@@ -221,7 +223,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     private fun shutdown() {
         this.status = DataCollectorWorkerStatus.SHUTDOWN
-        CollectorService.instance = null // Communicate to the outside that we are already done...
+        instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         this.locService!!.stopLocationUpdates(this)
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
@@ -245,7 +247,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         }
 
         this.status = DataCollectorWorkerStatus.DEAD
-        CollectorService.instance = null
+        instance = null
         return if(wasRunOK)
             Result.success()
         else

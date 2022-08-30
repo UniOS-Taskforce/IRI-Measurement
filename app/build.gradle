@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "com.simonmicro.irimeasurement"
-        minSdk 22
+        minSdk 27
         targetSdk 32
         versionCode 3
         versionName "1.2"

@@ -8,6 +8,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.simonmicro.irimeasurement.databinding.ActivityHomeScreenBinding
+import com.simonmicro.irimeasurement.services.StorageService
 
 class HomeScreen : AppCompatActivity() {
     private lateinit var binding: ActivityHomeScreenBinding
@@ -18,9 +19,17 @@ class HomeScreen : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize the snackbar target, so the service can remind the user to grant permissions
+        LocationService.snackbarTarget = this.findViewById(R.id.container)
+        HomeScreen.locService = LocationService(this, true)
+
+        // Init other services
+        StorageService.initWithContext(this)
+
+        // Prepare the UI
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
         binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")"
 
         val navView: BottomNavigationView = binding.navView
@@ -35,10 +44,6 @@ class HomeScreen : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
-
-        // Initialize the snackbar target, so the service can remind the user to grant permissions
-        LocationService.snackbarTarget = this.findViewById(R.id.container)
-        HomeScreen.locService = LocationService(this, true)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

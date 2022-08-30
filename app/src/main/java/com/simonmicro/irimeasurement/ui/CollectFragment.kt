@@ -15,9 +15,10 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.simonmicro.irimeasurement.CollectorService
+import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.HomeScreen
 import com.simonmicro.irimeasurement.R
+import com.simonmicro.irimeasurement.services.StorageService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,6 +33,7 @@ class CollectFragment : Fragment() {
     private var serviceControlButton: Button? = null
     private var serviceStatus: TextView? = null
     private var serviceUptime: TextView? = null
+    private var serviceFreeSpace: TextView? = null
     private var serviceLastAccel: TextView? = null
     private var serviceLastGrav: TextView? = null
     private var serviceLastMag: TextView? = null
@@ -125,6 +127,7 @@ class CollectFragment : Fragment() {
             }
             runBlocking { service.dataPointMutex.unlock() }
         }
+        this.serviceFreeSpace?.text = StorageService.getFreeSpaceNormalString()
         if(!isRunning) {
             this.serviceLoad?.isIndeterminate = false
             this.serviceLoad?.progress = 0
@@ -144,6 +147,7 @@ class CollectFragment : Fragment() {
 
         this.serviceStatus = view.findViewById<TextView>(R.id.collectorStatus)
         this.serviceUptime = view.findViewById<TextView>(R.id.collectorUptime)
+        this.serviceFreeSpace = view.findViewById<TextView>(R.id.freeSpace)
         this.serviceLastAccel = view.findViewById<TextView>(R.id.collectorAccel)
         this.serviceLastMag = view.findViewById<TextView>(R.id.collectorMag)
         this.serviceLastGrav = view.findViewById<TextView>(R.id.collectorGrav)
