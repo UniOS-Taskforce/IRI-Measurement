@@ -39,17 +39,26 @@
         android:layout_height="wrap_content"
         android:layout_weight="1" />
 
+    <ProgressBar
+        android:id="@+id/exportBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="8dp" />
+
     <ImageButton
         android:id="@+id/save"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="save"
         android:padding="8dp"
         app:srcCompat="@drawable/ic_twotone_save_24" />
 
     <ImageButton
         android:id="@+id/delete"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="delete"
         android:padding="8dp"
         app:srcCompat="@drawable/ic_twotone_delete_forever_24" />
 
