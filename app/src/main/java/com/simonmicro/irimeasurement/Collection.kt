@@ -56,7 +56,7 @@ class Collection(val id: UUID) {
     }
 
     fun toSnackbarString(): String {
-        return "ID: ${this.id}\nFrom: ${this.meta.creation}\nPoints: ${this.meta.pointCount}\nSets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\nCompleted: ${this.meta.completed}\nVersion: ${this.meta.version}"
+        return "ID: ${this.id}\nFrom: ${this.meta.creation}\nPoints: ${this.meta.pointCount}\nSets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\nCompleted: ${this.meta.completed}\nVersion: ${this.meta.version}\nSize: ${StorageService.getBytesBetterString(this.getSizeBytes())}"
     }
 
     fun getMeta(): CollectionMeta {
