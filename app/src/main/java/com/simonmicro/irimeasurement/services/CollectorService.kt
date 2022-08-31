@@ -288,7 +288,6 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.status = DataCollectorWorkerStatus.ALIVE
         CollectFragment.asyncUpdateUI() // TODO auto-call this on setters!
 
-        this.log.warning("Running ONLY for 300 seconds!") // TODO Change this to unlimited... If stable.
         var wantProceed = true
         while (!this.requestStop && wantProceed) {
             instance = this // Repeat this every loop, as sometimes this reference gets lost, so the UI fails to recognize the services state
@@ -315,14 +314,16 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.prepare()
             this.run()
         } catch (e: Exception) {
-            this.log.severe("Unexpected exception in service: " + (e.message?: "-"))
+            this.collection?.addCrashReport(e)
+            this.log.severe("Unexpected exception in service: " + e.stackTraceToString())
             wasRunOK = false
         }
 
         try {
             this.shutdown()
         } catch(e: Exception) {
-            // Ignore.
+            this.collection?.addCrashReport(e)
+            this.log.severe("Unexpected exception in service shutdown: " + e.stackTraceToString())
         }
 
         this.status = DataCollectorWorkerStatus.DEAD

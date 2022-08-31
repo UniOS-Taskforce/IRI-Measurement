@@ -1,6 +1,5 @@
 package com.simonmicro.irimeasurement
 
-import android.R.attr.data
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simonmicro.irimeasurement.services.CollectorService
@@ -17,6 +16,7 @@ import java.util.zip.ZipOutputStream
 import kotlin.collections.ArrayList
 import kotlin.io.path.Path
 import kotlin.io.path.isDirectory
+import kotlin.io.path.writeText
 
 class Collection(val id: UUID) {
     data class CollectionMeta (
@@ -41,7 +41,7 @@ class Collection(val id: UUID) {
     }
 
     private fun writeMetaData() {
-        File(this.metaPath.toString()).writeText(jacksonObjectMapper().writeValueAsString(this.meta))
+        this.metaPath.toFile().writeText(jacksonObjectMapper().writeValueAsString(this.meta))
     }
 
     private fun readMetaData() {
@@ -90,6 +90,11 @@ class Collection(val id: UUID) {
 
     fun completed() {
         this.meta.completed = true
+        this.writeMetaData()
+    }
+
+    fun addCrashReport(e: Exception) {
+        Path(this.path.toString(), "crash-${Date().time}.txt").writeText("Message: ${e.message}\nTrace: ${e.stackTraceToString()}\ntoString(): $e")
         this.writeMetaData()
     }
 
