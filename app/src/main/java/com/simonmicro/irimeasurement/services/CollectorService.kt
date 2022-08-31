@@ -73,7 +73,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";X;Y;Z"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.accelX};${this.accelY};${this.accelZ}"
+            return super.getRow() + ";${this.accelX};${this.accelY};${this.accelZ}"
         }
     }
     var lastAccelerometerPoint: AccelerometerPoint? = null
@@ -87,7 +87,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";X;Y;Z"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.accelX};${this.accelY};${this.accelZ}"
+            return super.getRow() + ";${this.accelX};${this.accelY};${this.accelZ}"
         }
     }
     var lastGravityPoint: GravityPoint? = null
@@ -101,7 +101,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";X;Y;Z"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.fieldX};${this.fieldY};${this.fieldZ}"
+            return super.getRow() + ";${this.fieldX};${this.fieldY};${this.fieldZ}"
         }
     }
     var lastMagnetometerPoint: MagnetometerPoint? = null
@@ -115,7 +115,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";X;Y;Z"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.rotVelX};${this.rotVelY};${this.rotVelZ}"
+            return super.getRow() + ";${this.rotVelX};${this.rotVelY};${this.rotVelZ}"
         }
     }
     var lastGyrometerPoint: GyrometerPoint? = null
@@ -129,7 +129,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";value"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.amount}"
+            return super.getRow() + ";${this.amount}"
         }
     }
     var lastTemperaturePoint: TemperaturePoint? = null
@@ -143,7 +143,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";value"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.amount}"
+            return super.getRow() + ";${this.amount}"
         }
     }
     var lastPressurePoint: PressurePoint? = null
@@ -157,7 +157,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";value"
         }
         override fun getRow(): String {
-            return super.getRow() + "${this.amount}"
+            return super.getRow() + ";${this.amount}"
         }
     }
     var lastHumidityPoint: HumidityPoint? = null
@@ -174,7 +174,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getHeader() + ";location height;location longitude;location latitude;accuracy direction;accuracy height;accuracy longitude latitude; direction; direction speed;queried"
         }
         override fun getRow(): String {
-            return super.getRow() + "${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed};${queried}"
+            return super.getRow() + ";${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed};${queried}"
         }
     }
     private var lastLocationObject: Location? = null
