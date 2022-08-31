@@ -46,6 +46,13 @@
         android:layout_height="48dp"
         android:padding="8dp" />
 
+    <ImageView
+        android:id="@+id/warnImg"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:padding="8dp"
+        app:srcCompat="@drawable/ic_twotone_warning_24" />
+
     <ImageButton
         android:id="@+id/save"
         android:layout_width="48dp"

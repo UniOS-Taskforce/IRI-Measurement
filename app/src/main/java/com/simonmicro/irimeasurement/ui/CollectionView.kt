@@ -2,6 +2,7 @@ package com.simonmicro.irimeasurement.ui
 
 import android.view.View
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.google.android.material.snackbar.Snackbar
@@ -39,6 +40,12 @@ class CollectionView(var collection: Collection, private var activity: Collectio
                 Snackbar.make(view, "Collection removed: ${collection.id}", Snackbar.LENGTH_LONG).show()
             }
         }
+
+        val warnImg = view.findViewById<ImageView>(R.id.warnImg)
+        if(collection.getMeta().completed)
+            warnImg.visibility = ProgressBar.GONE
+        else
+            warnImg.visibility = ProgressBar.VISIBLE
 
         val exportBar = view.findViewById<ProgressBar>(R.id.exportBar)
         exportBar.isIndeterminate = true
