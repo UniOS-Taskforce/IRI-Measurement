@@ -127,7 +127,7 @@ class CollectFragment : Fragment() {
             }
             runBlocking { service.dataPointMutex.unlock() }
         }
-        this.serviceFreeSpace?.text = StorageService.getFreeSpaceNormalString()
+        this.serviceFreeSpace?.text = StorageService.getBytesNormalString(StorageService.getFreeSpaceBytes())
         if(!isRunning) {
             this.serviceLoad?.isIndeterminate = false
             this.serviceLoad?.progress = 0

@@ -22,8 +22,8 @@ class StorageService {
             return context!!.filesDir.usableSpace
         }
 
-        fun getFreeSpaceBetterString(): String {
-            var free = this.getFreeSpaceBytes()
+        fun getBytesBetterString(bytes: Long): String {
+            var free = bytes
             var unit: String = "Bytes"
             if(free > 1024) {
                 free /= 1024
@@ -40,8 +40,8 @@ class StorageService {
             return "$free $unit"
         }
 
-        fun getFreeSpaceNormalString(): String {
-            var free = this.getFreeSpaceBytes()
+        fun getBytesNormalString(bytes: Long): String {
+            var free = bytes
             var unit: String = "Bytes"
             if(free > 1000) {
                 free /= 1000

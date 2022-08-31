@@ -79,6 +79,15 @@ class Collection(val id: UUID) {
         this.path.toFile().delete()
     }
 
+    fun getSizeBytes(): Long {
+        var size: Long = 0
+        for(file in this.path.toFile().listFiles()) {
+            if(file.isFile)
+                size += file.length()
+        }
+        return size
+    }
+
     fun completed() {
         this.meta.completed = true
         this.writeMetaData()
