@@ -23,7 +23,8 @@ class Collection(val id: UUID) {
         var creation: Date = Date(),
         var pointCount: Long = 0,
         var dataSets: ArrayList<String> = ArrayList(),
-        var completed: Boolean = false
+        var completed: Boolean = false,
+        var version: String = BuildConfig.VERSION_NAME
     )
 
     private val path: Path = Path(StorageService.getCollectionsRoot().absolutePath.toString(), this.id.toString())
@@ -55,7 +56,7 @@ class Collection(val id: UUID) {
     }
 
     fun toSnackbarString(): String {
-        return "ID: ${this.id}\nFrom: ${this.meta.creation}\nPoints: ${this.meta.pointCount}\nSets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\nCompleted: ${this.meta.completed}"
+        return "ID: ${this.id}\nFrom: ${this.meta.creation}\nPoints: ${this.meta.pointCount}\nSets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\nCompleted: ${this.meta.completed}\nVersion: ${this.meta.version}"
     }
 
     fun getMeta(): CollectionMeta {
