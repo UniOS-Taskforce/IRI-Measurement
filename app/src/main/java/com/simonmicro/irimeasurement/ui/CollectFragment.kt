@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -45,6 +46,7 @@ class CollectFragment : Fragment() {
     private var serviceLastLocAccu: TextView? = null
     private var serviceLastLocDir: TextView? = null
     private var serviceLoad: ProgressBar? = null
+    private var activeWarn: LinearLayout? = null
     private var done: Boolean = false
 
     companion object {
@@ -132,10 +134,13 @@ class CollectFragment : Fragment() {
             this.serviceLoad?.isIndeterminate = false
             this.serviceLoad?.progress = 0
         }
-        if(this.getServiceUIState())
+        if(this.getServiceUIState()) {
             this.serviceControlButton?.text = "STOP"
-        else
+            this.activeWarn?.visibility = LinearLayout.VISIBLE
+        } else {
             this.serviceControlButton?.text = "START"
+            this.activeWarn?.visibility = LinearLayout.GONE
+        }
     }
 
     override fun onCreateView(
@@ -159,6 +164,7 @@ class CollectFragment : Fragment() {
         this.serviceLastLocAccu = view.findViewById<TextView>(R.id.collectorLocAccu)
         this.serviceLastLocDir = view.findViewById<TextView>(R.id.collectorLocDir)
         this.serviceLoad = view.findViewById<ProgressBar>(R.id.serviceProgressBar)
+        this.activeWarn = view.findViewById<LinearLayout>(R.id.keepActiveWarning)
         this.serviceControlButton = view.findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
             if(this.getServiceUIState()) {
