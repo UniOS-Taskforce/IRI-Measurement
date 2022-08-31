@@ -165,16 +165,16 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     inner class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: Double,
                               var accuDir: Float, var accuHeight: Float, var accuLonLat: Float,
-                              var dir: Float, var dirSpeed: Float): DataPoint() {
+                              var dir: Float, var dirSpeed: Float, var queried: Boolean): DataPoint() {
 
         override fun getName(): String {
             return "location"
         }
         override fun getHeader(): String {
-            return super.getHeader() + ";location height;location longitude;location latitude;accuracy direction;accuracy height;accuracy longitude latitude; direction; direction speed"
+            return super.getHeader() + ";location height;location longitude;location latitude;accuracy direction;accuracy height;accuracy longitude latitude; direction; direction speed;queried"
         }
         override fun getRow(): String {
-            return super.getRow() + "${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed}"
+            return super.getRow() + "${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed};${queried}"
         }
     }
     private var lastLocationObject: Location? = null
@@ -277,7 +277,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
         var location: Location? = this.locService!!.getUserLocation(showWarning = false)
         if(location != null && location != this.lastLocationObject) {
-            this.onLocationChanged(location)
+            this.saveLocation(location, true)
             this.lastLocationObject = location
         }
 
@@ -406,14 +406,18 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         CollectFragment.asyncUpdateUI()
     }
 
-    override fun onLocationChanged(location: Location) {
+    private fun saveLocation(location: Location, wasQueried: Boolean) {
         runBlocking { dataPointMutex.lock() }
         this.dataPointCount++
-        var l = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed)
+        var l = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed, wasQueried)
         this.lastLocation = l
         this.locationHistory.add(l)
         runBlocking { dataPointMutex.unlock() }
         CollectFragment.asyncUpdateUI()
+    }
+
+    override fun onLocationChanged(location: Location) {
+        this.saveLocation(location, false)
     }
 }
 
