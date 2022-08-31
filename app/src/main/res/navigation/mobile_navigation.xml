@@ -8,12 +8,10 @@
     <fragment
         android:id="@+id/navigation_collect"
         android:name="com.simonmicro.irimeasurement.ui.CollectFragment"
-        android:label="@string/title_collect"
         tools:layout="@layout/fragment_collect" />
 
     <fragment
         android:id="@+id/navigation_analyze"
         android:name="com.simonmicro.irimeasurement.ui.AnalyzeFragment"
-        android:label="@string/title_analyze"
         tools:layout="@layout/fragment_analyze" />
 </navigation>
