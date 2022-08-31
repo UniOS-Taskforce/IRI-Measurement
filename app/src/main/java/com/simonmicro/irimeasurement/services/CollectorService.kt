@@ -10,11 +10,14 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.impl.utils.WakeLocks.newWakeLock
+import com.simonmicro.irimeasurement.BuildConfig
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.ui.CollectFragment
@@ -35,6 +38,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     private lateinit var sensorManager: SensorManager
     private var requestStop: Boolean = false
     private var locService: LocationService? = null
+    private var wakelock: PowerManager.WakeLock? = null
     var collection: Collection? = null
 
     private var accelSensor: Sensor? = null
@@ -206,6 +210,12 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         // Register loop, which is required by this ancient API to process incoming location updates
         if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this))
             this.log.warning("Failed to register for location updates - still using query based solution...")
+        // Get wakelock
+        this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector").apply {
+                    acquire()
+                }
+            }
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
@@ -303,7 +313,9 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         this.collection!!.completed()
-        this.locService!!.stopLocationUpdates(this)
+        if(!this.locService!!.stopLocationUpdates(this))
+            this.log.warning("Failed to unregister from location updates - did we ever subscribe successfully?")
+        this.wakelock!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
     }
