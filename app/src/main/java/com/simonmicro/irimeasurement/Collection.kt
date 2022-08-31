@@ -1,5 +1,6 @@
 package com.simonmicro.irimeasurement
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simonmicro.irimeasurement.services.CollectorService
@@ -20,10 +21,10 @@ import kotlin.io.path.writeText
 
 class Collection(val id: UUID) {
     data class CollectionMeta (
-        var creation: Date = Date(),
+        var started: Date = Date(),
+        var finished: Date? = null,
         var pointCount: Long = 0,
         var dataSets: ArrayList<String> = ArrayList(),
-        var completed: Boolean = false,
         var version: String = BuildConfig.VERSION_NAME
     )
 
@@ -48,7 +49,7 @@ class Collection(val id: UUID) {
     private fun readMetaData() {
         if(!this.exist())
             return
-        this.meta = jacksonObjectMapper().readValue<CollectionMeta>(File(this.metaPath.toString()).readText())
+        this.meta = jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue<CollectionMeta>(File(this.metaPath.toString()).readText())
     }
 
     private fun exist(): Boolean {
@@ -56,7 +57,12 @@ class Collection(val id: UUID) {
     }
 
     fun toSnackbarString(): String {
-        return "ID: ${this.id}\nFrom: ${this.meta.creation}\nPoints: ${this.meta.pointCount}\nSets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\nCompleted: ${this.meta.completed}\nVersion: ${this.meta.version}\nSize: ${StorageService.getBytesBetterString(this.getSizeBytes())}"
+        return "ID: ${this.id}\n" +
+                "Started: ${this.meta.started}\n" +
+                "Finished: ${this.meta.finished}\n" +
+                "Points: ${this.meta.pointCount}\n" +
+                "Sets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\n" +
+                "Size: ${StorageService.getBytesBetterString(this.getSizeBytes())}"
     }
 
     fun getMeta(): CollectionMeta {
@@ -68,6 +74,12 @@ class Collection(val id: UUID) {
             return
         this.path.toFile().mkdir()
         this.writeMetaData()
+    }
+
+    fun reload() {
+        if(!this.exist())
+            return
+        this.readMetaData()
     }
 
     fun remove() {
@@ -90,7 +102,7 @@ class Collection(val id: UUID) {
     }
 
     fun completed() {
-        this.meta.completed = true
+        this.meta.finished = Date()
         this.writeMetaData()
     }
 
@@ -123,7 +135,7 @@ class Collection(val id: UUID) {
     }
 
     fun <T: CollectorService.DataPoint> addPoints(points: ArrayList<T>) {
-        if(this.meta.completed)
+        if(this.meta.finished != null)
             throw RuntimeException("You tried to add to a completed collection")
         if(points.size == 0)
             return

@@ -21,7 +21,7 @@ class CollectionView(var collection: Collection, private var activity: Collectio
 
     fun updateView(view: View, list: CollectionViewAdapter) {
         val textView1 = view.findViewById<TextView>(R.id.title)
-        textView1?.text = collection.getMeta().creation.toString()
+        textView1?.text = collection.getMeta().started.toString()
 
         val textView2 = view.findViewById<TextView>(R.id.subtitle)
         textView2?.text = "${StorageService.getBytesNormalString(collection.getSizeBytes())}, ${collection.id.toString()}"
@@ -42,10 +42,10 @@ class CollectionView(var collection: Collection, private var activity: Collectio
         }
 
         val warnImg = view.findViewById<ImageView>(R.id.warnImg)
-        if(collection.getMeta().completed)
-            warnImg.visibility = ProgressBar.GONE
+        if(collection.getMeta().finished != null)
+            warnImg.visibility = ImageView.GONE
         else
-            warnImg.visibility = ProgressBar.VISIBLE
+            warnImg.visibility = ImageView.VISIBLE
 
         val exportBar = view.findViewById<ProgressBar>(R.id.exportBar)
         exportBar.isIndeterminate = true

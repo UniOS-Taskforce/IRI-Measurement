@@ -34,6 +34,7 @@ class CollectionManager : AppCompatActivity() {
         numbersListView.adapter = collectionsArrayAdapter
         numbersListView.onItemClickListener = OnItemClickListener { _, view, position, _ ->
             val cv: CollectionView = a[position]
+            cv.collection.reload() // Update the metadata, just in case...
             val snack: Snackbar = Snackbar.make(view, cv.collection.toSnackbarString(), Snackbar.LENGTH_LONG)
             val snackText: TextView = snack.view.findViewById(com.google.android.material.R.id.snackbar_text)
             snackText.maxLines = 12
