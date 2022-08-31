@@ -22,7 +22,6 @@ class LocationService {
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 1
     private val log = Logger.getLogger(LocationService::class.java.name)
     private val context: Context
-    var showWarning: Boolean
 
     companion object {
         var snackbarTarget: View? = null
@@ -30,11 +29,10 @@ class LocationService {
 
     constructor(context: Context) {
         this.context = context
-        this.showWarning = true // Previously optional - now required!
     }
 
     @SuppressLint("MissingPermission")
-    fun getUserLocation(): Location? {
+    fun getUserLocation(showWarning: Boolean = true): Location? {
         if(!this.hasLocationPermissions())
             return null
 
@@ -45,41 +43,47 @@ class LocationService {
             val location = locationManager.getLastKnownLocation(provider)
             if (location != null)
                 return location
-            this.showWarning("Location currently unavailable...")
+            this.showWarning("Location currently unavailable...", showWarning)
         } else
-            this.showWarning("No location provider available?!")
+            this.showWarning("No location provider available?!", showWarning)
 
         return null
     }
 
     @SuppressLint("MissingPermission")
-    fun startLocationUpdates(looper: Looper, listener: LocationListener) {
+    fun startLocationUpdates(looper: Looper, listener: LocationListener): Boolean {
         if(!this.hasLocationPermissions())
-            return
+            return false
 
         val locationManager = this.context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val provider = locationManager.getBestProvider(Criteria(), true)
-        if (provider != null) {
+        return if (provider != null) {
             locationManager.requestLocationUpdates(provider, 0, 0.0f, listener, looper)
-        } else
-            this.showWarning("No location provider available?!")
+            true
+        } else {
+            this.showWarning("No location provider available?!", true)
+            false
+        }
     }
 
-    fun stopLocationUpdates(listener: LocationListener) {
+    fun stopLocationUpdates(listener: LocationListener): Boolean {
         if(!this.hasLocationPermissions())
-            return
+            return false
 
         val locationManager = this.context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         val provider = locationManager.getBestProvider(Criteria(), true)
-        if (provider != null) {
+        return if (provider != null) {
             locationManager.removeUpdates(listener)
-        } else
-            this.showWarning("No location provider available?!")
+            true
+        } else {
+            this.showWarning("No location provider available?!", true)
+            false
+        }
     }
 
-    private fun showWarning(msg: String) {
+    private fun showWarning(msg: String, showWarning: Boolean) {
         this.log.info(msg)
-        if(!this.showWarning)
+        if(!showWarning)
             return
         if(snackbarTarget != null) {
             val snackBar = Snackbar.make(snackbarTarget!!, msg, Snackbar.LENGTH_INDEFINITE)
@@ -91,13 +95,13 @@ class LocationService {
         }
     }
 
-    fun hasLocationPermissions(requirePrecise: Boolean = false): Boolean {
-        if (ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
+    fun hasLocationPermissions(requirePrecise: Boolean = false, showWarning: Boolean = true): Boolean {
+        return if (ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ||
             (!requirePrecise && ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
-             return true
+            true
         } else {
-            this.showWarning("A permission for location is missing. The requested function is may not available.")
-            return false
+            this.showWarning("A permission for location is missing. The requested function is may not available.", showWarning)
+            false
         }
     }
 
@@ -146,6 +150,6 @@ class LocationService {
             val alert = builder.create()
             alert.show()
         } else
-            this.showWarning("A permission for location is missing. The requested function is may not available.")
+            this.showWarning("A permission for location is missing. The requested function is may not available.", true)
     }
 }

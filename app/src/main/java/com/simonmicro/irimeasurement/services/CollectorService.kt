@@ -204,7 +204,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.collection = Collection(UUID.randomUUID())
         this.collection!!.create()
         // Register loop, which is required by this ancient API to process incoming location updates
-        this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this)
+        if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this))
+            this.log.warning("Failed to register for location updates - still using query based solution...")
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
@@ -274,7 +275,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         }
 
         // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
-        var location: Location? = this.locService!!.getUserLocation()
+        var location: Location? = this.locService!!.getUserLocation(showWarning = false)
         if(location != null && location != this.lastLocationObject) {
             this.onLocationChanged(location)
             this.lastLocationObject = location
