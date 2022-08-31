@@ -177,6 +177,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             return super.getRow() + "${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed}"
         }
     }
+    private var lastLocationObject: Location? = null
     var lastLocation: LocationPoint? = null
     private var locationHistory: ArrayList<LocationPoint> = ArrayList()
 
@@ -270,6 +271,13 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.collection!!.addPoints<HumidityPoint>(humidityHistoryCopy)
             this.collection!!.addPoints<LocationPoint>(locationHistoryCopy)
             this.dataPointCountOnLastFlush = currentDataCount
+        }
+
+        // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
+        var location: Location? = this.locService!!.getUserLocation()
+        if(location != null && location != this.lastLocationObject) {
+            this.onLocationChanged(location)
+            this.lastLocationObject = location
         }
 
         return !done
