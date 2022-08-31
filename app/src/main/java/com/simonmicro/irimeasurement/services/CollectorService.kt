@@ -237,7 +237,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         val currentDataCount: Long = this.dataPointCount
         runBlocking { dataPointMutex.unlock() } // Release the lock - just in case we don't flush now
 
-        val done: Boolean = runtime > 300 // Should we "finish" now?
+        val done: Boolean = false // Use this to stop after 30 seconds: runtime > 30
 
         // Do we need to flush?
         if(done || (currentDataCount - this.dataPointCountOnLastFlush > this.flushTarget)) {
