@@ -1,12 +1,15 @@
 package com.simonmicro.irimeasurement.ui
 
+import android.animation.ValueAnimator
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.simonmicro.irimeasurement.*
 import com.simonmicro.irimeasurement.services.LocationService
 import org.osmdroid.config.Configuration
@@ -19,6 +22,7 @@ import java.util.logging.Logger
 
 class AnalyzeFragment : Fragment() {
     private var map: MapView? = null
+    private var mapExpanded: Boolean = true
     private val log = Logger.getLogger(LocationService::class.java.name)
     private var done: Boolean = false
 
@@ -34,6 +38,33 @@ class AnalyzeFragment : Fragment() {
         map = view.findViewById<MapView>(R.id.map)
         map!!.setTileSource(TileSourceFactory.MAPNIK)
         map!!.setMultiTouchControls(true)
+        val mapDefaultMargin: Int = map!!.marginBottom
+
+        // Add map resize (with animation) to the button
+        var resizeButtn: FloatingActionButton = view.findViewById<FloatingActionButton>(R.id.toggleLayoutButton)
+        resizeButtn.setOnClickListener {
+            this.mapExpanded = !this.mapExpanded
+
+            var minHeight: Int = mapDefaultMargin
+            var maxHeight: Int = view.measuredHeight - mapDefaultMargin
+            val valueAnimator: ValueAnimator
+            if(this.mapExpanded) {
+                valueAnimator = ValueAnimator.ofInt(minHeight, maxHeight)
+                resizeButtn.setImageResource(R.drawable.ic_twotone_arrow_upward_24)
+            } else {
+                valueAnimator = ValueAnimator.ofInt(maxHeight, minHeight)
+                resizeButtn.setImageResource(R.drawable.ic_twotone_arrow_downward_24)
+            }
+
+            valueAnimator.duration = 500L
+            valueAnimator.addUpdateListener {
+                val animatedValue = valueAnimator.animatedValue as Int
+                val params: ViewGroup.LayoutParams = map!!.layoutParams
+                params.height = animatedValue
+                map!!.layoutParams = params
+            }
+            valueAnimator.start()
+        }
 
         if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
             // Oh, we already got all permissions? So, let's display the users location live on the map!
@@ -69,6 +100,7 @@ class AnalyzeFragment : Fragment() {
         }
         return view
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
