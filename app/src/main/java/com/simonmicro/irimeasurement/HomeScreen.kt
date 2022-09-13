@@ -47,7 +47,7 @@ class HomeScreen : AppCompatActivity() {
         // menu should be considered as top level destinations.
         val appBarConfiguration = AppBarConfiguration(
             setOf(
-                R.id.navigation_collect, R.id.navigation_analyze
+                R.id.home_screen_actionbar_collect, R.id.home_screen_actionbar_analyze
             )
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
@@ -61,7 +61,7 @@ class HomeScreen : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return if(item.itemId == R.id.menu_main_ViewCollections) {
+        return if(item.itemId == R.id.home_screen_options_collections) {
             val intent = Intent(this, CollectionManager::class.java)
             startActivity(intent)
             true

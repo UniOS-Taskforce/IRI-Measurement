@@ -1,6 +1,8 @@
 package com.simonmicro.irimeasurement
 
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.ListView
 import android.widget.TextView
@@ -13,6 +15,7 @@ import com.simonmicro.irimeasurement.ui.CollectionViewAdapter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.InputStream
 import java.io.OutputStream
 
 class CollectionManager : AppCompatActivity() {
@@ -40,6 +43,23 @@ class CollectionManager : AppCompatActivity() {
             snackText.maxLines = 12
             snack.show()
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.collection_manager_options, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return if(item.itemId == R.id.collection_manager_options_import) {
+            this.import()
+            true
+        } else if(item.itemId == R.id.collection_manager_options_close) {
+            this.finish()
+            true
+        } else
+            super.onOptionsItemSelected(item)
     }
 
     private var collectionToExportViaContract: CollectionView? = null
@@ -84,8 +104,52 @@ class CollectionManager : AppCompatActivity() {
         }.start()
     }
 
+    private val importCollectionContract = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if(uri == null)
+            return@registerForActivityResult
+        // Do the export
+        Thread {
+            CoroutineScope(Dispatchers.Main).launch {
+                collectionsArrayAdapter.notifyDataSetChanged()
+            }
+            try {
+                Snackbar.make(
+                    findViewById(R.id.collectionsList),
+                    "Starting import...",
+                    Snackbar.LENGTH_LONG
+                ).show()
+                val inp: InputStream = this.contentResolver?.openInputStream(uri)!!
+                val collection: Collection = Collection.import(inp)
+                inp.close()
+                collectionsArrayAdapter.add(CollectionView(collection, this))
+                CoroutineScope(Dispatchers.Main).launch {
+                    collectionsArrayAdapter.notifyDataSetChanged()
+                }
+                Snackbar.make(
+                    findViewById(R.id.collectionsList),
+                    "Finished import of ${collection.id}",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            } catch (e: Exception) {
+                Snackbar.make(
+                    findViewById(R.id.collectionsList),
+                    "Import of failed: " + e.message,
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+            CoroutineScope(Dispatchers.Main).launch {
+                collectionsArrayAdapter.notifyDataSetChanged()
+            }
+        }.start()
+    }
+
     fun export(cv: CollectionView) {
         this.collectionToExportViaContract = cv
         exportCollectionContract.launch(cv.collection.id.toString() + ".zip")
+    }
+
+    fun import() {
+        val smth: Array<String> = arrayOf("application/zip")
+        importCollectionContract.launch(smth)
     }
 }

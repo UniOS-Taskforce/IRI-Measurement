@@ -5,10 +5,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.services.StorageService
-import java.io.BufferedInputStream
-import java.io.File
-import java.io.FileInputStream
-import java.io.OutputStream
+import java.io.*
 import java.lang.RuntimeException
 import java.nio.file.Path
 import java.util.*
@@ -33,7 +30,7 @@ class Collection(val id: UUID) {
     private var meta: CollectionMeta = CollectionMeta()
 
     companion object {
-        fun import(): Collection {
+        fun import(input: InputStream): Collection {
             TODO("Not implemented: Collection import")
         }
     }
