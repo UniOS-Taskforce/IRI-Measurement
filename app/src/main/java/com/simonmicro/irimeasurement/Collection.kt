@@ -84,7 +84,7 @@ class Collection(val id: UUID) {
 
     fun remove() {
         // Delete all sub-files
-        for(file in this.path.toFile().listFiles()) {
+        for(file in this.path.toFile().listFiles()!!) {
             if(file.isFile)
                 file.delete()
         }
@@ -94,7 +94,7 @@ class Collection(val id: UUID) {
 
     fun getSizeBytes(): Long {
         var size: Long = 0
-        for(file in this.path.toFile().listFiles()) {
+        for(file in this.path.toFile().listFiles()!!) {
             if(file.isFile)
                 size += file.length()
         }
@@ -127,7 +127,7 @@ class Collection(val id: UUID) {
 
     fun export(output: OutputStream) {
         var out = ZipOutputStream(output)
-        for(file: File in this.path.toFile().listFiles()) {
+        for(file: File in this.path.toFile().listFiles()!!) {
             if(file.isFile)
                 this.addFileToZip(out, file)
         }
