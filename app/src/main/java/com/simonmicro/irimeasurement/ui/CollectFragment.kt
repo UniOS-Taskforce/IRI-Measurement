@@ -1,9 +1,9 @@
 package com.simonmicro.irimeasurement.ui
 
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,13 +24,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.logging.Logger
 
 fun Float.format(digits: Int) = "%.${digits}f".format(this)
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 class CollectFragment : Fragment() {
-    private val log = Logger.getLogger(CollectFragment::class.java.name)
+    private val logTag = CollectFragment::class.java.name
     private var serviceControlButton: Button? = null
     private var serviceStatus: TextView? = null
     private var serviceUptime: TextView? = null
@@ -168,10 +167,10 @@ class CollectFragment : Fragment() {
         this.serviceControlButton = view.findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
             if(this.getServiceUIState()) {
-                this.log.info("Stopping collector...")
+                Log.i(logTag, "Stopping collector...")
                 WorkManager.getInstance(this.requireContext()).cancelUniqueWork(getString(R.string.service_id))
             } else if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
-                this.log.info("Starting collector...")
+                Log.i(logTag, "Starting collector...")
                 WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
                     getString(R.string.service_id),
                     ExistingWorkPolicy.REPLACE,

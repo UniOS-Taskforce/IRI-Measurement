@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,7 +24,7 @@ import java.util.logging.Logger
 class AnalyzeFragment : Fragment() {
     private var map: MapView? = null
     private var mapExpanded: Boolean = true
-    private val log = Logger.getLogger(LocationService::class.java.name)
+    private val logTag = AnalyzeFragment::class.java.name
     private var done: Boolean = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -31,7 +32,7 @@ class AnalyzeFragment : Fragment() {
 
         // Init valid UserAgent for the map (otherwise tiles won't load)
         val s = BuildConfig.APPLICATION_ID + "@" + BuildConfig.VERSION_NAME
-        this.log.info("Using agent: '$s'")
+        Log.i(logTag, "Using agent: '$s'")
         Configuration.getInstance().userAgentValue = s
 
         // Init the map

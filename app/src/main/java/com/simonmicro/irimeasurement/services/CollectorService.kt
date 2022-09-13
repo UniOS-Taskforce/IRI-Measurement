@@ -11,12 +11,12 @@ import android.location.Location
 import android.location.LocationListener
 import android.os.Build
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import androidx.work.impl.utils.WakeLocks.newWakeLock
 import com.simonmicro.irimeasurement.BuildConfig
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.Collection
@@ -24,7 +24,6 @@ import com.simonmicro.irimeasurement.ui.CollectFragment
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
-import java.util.logging.Logger
 import kotlin.collections.ArrayList
 
 class CollectorService(appContext: Context, workerParams: WorkerParameters): Worker(appContext, workerParams), SensorEventListener, LocationListener {
@@ -34,7 +33,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     private var nId = 0
     private var notificationBuilder: NotificationCompat.Builder? = null
-    private val log = Logger.getLogger(CollectorService::class.java.name)
+    private val logTag = CollectorService::class.java.name
     private lateinit var sensorManager: SensorManager
     private var requestStop: Boolean = false
     private var locService: LocationService? = null
@@ -209,7 +208,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.collection!!.create()
         // Register loop, which is required by this ancient API to process incoming location updates
         if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this))
-            this.log.warning("Failed to register for location updates - still using query based solution...")
+            Log.w(logTag, "Failed to register for location updates - still using query based solution...")
         // Get wakelock
         this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
                 newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector").apply {
@@ -226,13 +225,13 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         magSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
         pressSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)
         humiSensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
-        if(accelSensor == null) this.log.warning("No accelerometer found!") else sensorManager.registerListener(this, accelSensor, speed)
-        if(tempSensor == null) this.log.warning("No temperature found!") else sensorManager.registerListener(this, tempSensor, speed)
-        if(gravSensor == null) this.log.warning("No gravity found!") else sensorManager.registerListener(this, gravSensor, speed)
-        if(gyroSensor == null) this.log.warning("No gyroscope found!") else sensorManager.registerListener(this, gyroSensor, speed)
-        if(magSensor == null) this.log.warning("No magnetometer found!") else sensorManager.registerListener(this, magSensor, speed)
-        if(pressSensor == null) this.log.warning("No pressure found!") else sensorManager.registerListener(this, pressSensor, speed)
-        if(humiSensor == null) this.log.warning("No humidity found!") else sensorManager.registerListener(this, humiSensor, speed)
+        if(accelSensor == null) Log.w(logTag, "No accelerometer found!") else sensorManager.registerListener(this, accelSensor, speed)
+        if(tempSensor == null) Log.w(logTag, "No temperature found!") else sensorManager.registerListener(this, tempSensor, speed)
+        if(gravSensor == null) Log.w(logTag, "No gravity found!") else sensorManager.registerListener(this, gravSensor, speed)
+        if(gyroSensor == null) Log.w(logTag, "No gyroscope found!") else sensorManager.registerListener(this, gyroSensor, speed)
+        if(magSensor == null) Log.w(logTag, "No magnetometer found!") else sensorManager.registerListener(this, magSensor, speed)
+        if(pressSensor == null) Log.w(logTag, "No pressure found!") else sensorManager.registerListener(this, pressSensor, speed)
+        if(humiSensor == null) Log.w(logTag, "No humidity found!") else sensorManager.registerListener(this, humiSensor, speed)
     }
 
     /**
@@ -314,7 +313,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         this.collection!!.completed()
         if(!this.locService!!.stopLocationUpdates(this))
-            this.log.warning("Failed to unregister from location updates - did we ever subscribe successfully?")
+            Log.w(logTag, "Failed to unregister from location updates - did we ever subscribe successfully?")
         this.wakelock!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
@@ -327,7 +326,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.run()
         } catch (e: Exception) {
             this.collection?.addCrashReport(e)
-            this.log.severe("Unexpected exception in service: " + e.stackTraceToString())
+            Log.e(logTag, "Unexpected exception in service: " + e.stackTraceToString())
             wasRunOK = false
         }
 
@@ -335,7 +334,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.shutdown()
         } catch(e: Exception) {
             this.collection?.addCrashReport(e)
-            this.log.severe("Unexpected exception in service shutdown: " + e.stackTraceToString())
+            Log.e(logTag, "Unexpected exception in service shutdown: " + e.stackTraceToString())
         }
 
         this.status = DataCollectorWorkerStatus.DEAD

@@ -65,6 +65,13 @@ class StorageService {
             return ret
         }
 
+        fun getCache(): File {
+            this.context!!.cacheDir.mkdir()
+            var ret = File(this.context!!.cacheDir, "collections")
+            ret.mkdir()
+            return ret
+        }
+
         fun listCollections(): ArrayList<Collection> {
             var all: File = this.getCollectionsRoot()
             var list: ArrayList<Collection> = ArrayList()

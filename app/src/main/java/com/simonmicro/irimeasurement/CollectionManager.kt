@@ -1,6 +1,7 @@
 package com.simonmicro.irimeasurement
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView.OnItemClickListener
@@ -17,9 +18,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.*
+import kotlin.collections.ArrayList
 
 class CollectionManager : AppCompatActivity() {
     private lateinit var collectionsArrayAdapter: CollectionViewAdapter
+    private val logTag = CollectionManager::class.java.name
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,6 +95,7 @@ class CollectionManager : AppCompatActivity() {
                     Snackbar.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
+                Log.e(logTag, "Export of ${cv.collection.id} failed: " + e.stackTraceToString())
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
                     "Export of ${cv.collection.id} failed: " + e.message,
@@ -118,12 +123,29 @@ class CollectionManager : AppCompatActivity() {
                     "Starting import...",
                     Snackbar.LENGTH_LONG
                 ).show()
+                Log.d(logTag, "User wants to import $uri")
+                var uuidHint: UUID? = null
+                var uuidLength: Int = UUID.randomUUID().toString().length
+                if(uri.path != null && uri.path!!.length > uuidLength + ".zip".length) {
+                    try {
+                        uuidHint = UUID.fromString(uri.path!!.substring(uri.path!!.length - ".zip".length - uuidLength, uri.path!!.length - ".zip".length))
+                    } catch(e: Exception) {
+                        Log.w(logTag, "Failed to parse long enough URI ($uri) for file name: ${e.stackTraceToString()}")
+                        Log.w(logTag, e.stackTraceToString())
+                    }
+                }
+                val collectionOldCount = StorageService.listCollections().size
                 val inp: InputStream = this.contentResolver?.openInputStream(uri)!!
-                val collection: Collection = Collection.import(inp)
+                val collection: Collection = Collection.import(inp, uuidHint)
                 inp.close()
-                collectionsArrayAdapter.add(CollectionView(collection, this))
-                CoroutineScope(Dispatchers.Main).launch {
-                    collectionsArrayAdapter.notifyDataSetChanged()
+                var newCV = CollectionView(collection, this)
+                val collectionNewCount = StorageService.listCollections().size
+                // Determine if really a new collection was imported, or if an existing was updated
+                if(collectionOldCount != collectionNewCount) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        collectionsArrayAdapter.add(newCV)
+                        collectionsArrayAdapter.notifyDataSetChanged()
+                    }
                 }
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
@@ -131,9 +153,10 @@ class CollectionManager : AppCompatActivity() {
                     Snackbar.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
+                Log.e(logTag, "Import failed: " + e.stackTraceToString())
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Import of failed: " + e.message,
+                    "Import failed: " + e.message,
                     Snackbar.LENGTH_LONG
                 ).show()
             }
@@ -149,7 +172,6 @@ class CollectionManager : AppCompatActivity() {
     }
 
     fun import() {
-        val smth: Array<String> = arrayOf("application/zip")
-        importCollectionContract.launch(smth)
+        importCollectionContract.launch(arrayOf("application/zip"))
     }
 }
