@@ -210,11 +210,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this))
             Log.w(logTag, "Failed to register for location updates - still using query based solution...")
         // Get wakelock
-        this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector").apply {
-                    acquire()
-                }
-            }
+        this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector")
+        this.wakelock!!.acquire()
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
@@ -314,7 +311,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.collection!!.completed()
         if(!this.locService!!.stopLocationUpdates(this))
             Log.w(logTag, "Failed to unregister from location updates - did we ever subscribe successfully?")
-        this.wakelock!!.release()
+        if(this.wakelock!!.isHeld)
+            this.wakelock!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
     }
