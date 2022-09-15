@@ -8,12 +8,16 @@ import android.widget.ArrayAdapter
 import com.simonmicro.irimeasurement.R
 
 class CollectionViewAdapter(context: Context, arrayList: ArrayList<CollectionView>?) : ArrayAdapter<CollectionView?>(context, 0, arrayList!! as List<CollectionView?>) {
+    companion object {
+        val inflatorId = R.layout.collection_view
+    }
+
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         var currentItemView: View? = convertView
 
         // if the recyclable view is null then inflate the custom layout for the same
         if (currentItemView == null) {
-            currentItemView = LayoutInflater.from(context).inflate(R.layout.collection_view, parent, false)
+            currentItemView = LayoutInflater.from(context).inflate(inflatorId, parent, false)
         }
 
         val currentNumberPosition: CollectionView? = getItem(position)

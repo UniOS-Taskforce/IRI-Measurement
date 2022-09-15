@@ -12,9 +12,9 @@ import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.CollectionManager
 import com.simonmicro.irimeasurement.services.StorageService
 
-class CollectionView(var collection: Collection, private var activity: CollectionManager, var exporting: Boolean = false) {
+class CollectionView(var collection: Collection, private var activity: CollectionManager?, var exporting: Boolean = false) {
     private fun isCollectionInUse(view: View): Boolean {
-        val b: Boolean = (CollectorService.instance != null && CollectorService.instance!!.collection!!.id == this.collection.id)
+        val b: Boolean = this.collection.isInUse()
         if(b) Snackbar.make(view, "Collection is in use!", Snackbar.LENGTH_LONG).show()
         return b
     }
@@ -28,16 +28,25 @@ class CollectionView(var collection: Collection, private var activity: Collectio
 
         var savBtn: ImageButton = view.findViewById<ImageButton>(R.id.save)
         var delBtn: ImageButton = view.findViewById<ImageButton>(R.id.delete)
-        savBtn.setOnClickListener {
-            if(!this.isCollectionInUse(view)) {
-                activity.export(this)
+        if(activity == null) {
+            savBtn.visibility = ImageButton.GONE
+            delBtn.visibility = ImageButton.GONE
+        } else {
+            savBtn.setOnClickListener {
+                if (!this.isCollectionInUse(view)) {
+                    activity!!.export(this)
+                }
             }
-        }
-        delBtn.setOnClickListener {
-            if(!this.isCollectionInUse(view)) {
-                collection.remove()
-                list.remove(this)
-                Snackbar.make(view, "Collection removed: ${collection.id}", Snackbar.LENGTH_LONG).show()
+            delBtn.setOnClickListener {
+                if (!this.isCollectionInUse(view)) {
+                    collection.remove()
+                    list.remove(this)
+                    Snackbar.make(
+                        view,
+                        "Collection removed: ${collection.id}",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
             }
         }
 

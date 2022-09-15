@@ -191,4 +191,8 @@ class Collection(val id: UUID) {
             this.meta.dataSets.add(points[0].getName())
         this.writeMetaData()
     }
+
+    fun isInUse(): Boolean {
+        return (CollectorService.instance != null && CollectorService.instance!!.collection!!.id == this.id)
+    }
 }

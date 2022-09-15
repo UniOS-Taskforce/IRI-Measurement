@@ -8,24 +8,31 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.*
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.simonmicro.irimeasurement.*
-import com.simonmicro.irimeasurement.services.LocationService
+import com.simonmicro.irimeasurement.services.StorageService
+import com.simonmicro.irimeasurement.Collection
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import java.util.logging.Logger
+import java.util.*
+import kotlin.collections.ArrayList
 
 class AnalyzeFragment : Fragment() {
     private var map: MapView? = null
     private var mapExpanded: Boolean = true
     private val logTag = AnalyzeFragment::class.java.name
     private var done: Boolean = false
+    private var collectionOptions: ArrayList<String> = ArrayList()
+    private lateinit var collectionsArrayAdapter: ArrayAdapter<String>
+    private lateinit var analyzeNoCollection: TextView
+    private lateinit var analyzeProperties: LinearLayout
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         var view: View = inflater.inflate(R.layout.fragment_analyze, container, false)
@@ -99,9 +106,56 @@ class AnalyzeFragment : Fragment() {
                 }
             }
         }
+
+        analyzeNoCollection = view.findViewById(R.id.analyzeNoCollection)
+        analyzeProperties = view.findViewById(R.id.analyzeProperties)
+
+        collectionsArrayAdapter = ArrayAdapter(view.context, R.layout.simple_spinner_item, collectionOptions)
+        collectionsArrayAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
+
+        var spinner = view.findViewById<Spinner>(R.id.spinner)
+        spinner.adapter = collectionsArrayAdapter
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parentView: AdapterView<*>?,
+                selectedItemView: View?,
+                position: Int,
+                id: Long
+            ) {
+                var c = Collection(UUID.fromString(collectionOptions[position]))
+                view.findViewById<TextView>(R.id.analyzeDetails).text = c.toSnackbarString()
+            }
+
+            override fun onNothingSelected(p0: AdapterView<*>?) {
+                // Ignore...
+            }
+        }
+        this.initAnalyzeProperties()
+
         return view
     }
 
+    override fun onResume() {
+        super.onResume()
+        this.initAnalyzeProperties()
+    }
+
+    private fun initAnalyzeProperties() {
+        var l = StorageService.listCollections()
+        if(l.size == 0) {
+            analyzeNoCollection.visibility = TextView.VISIBLE
+            analyzeProperties.visibility = LinearLayout.GONE
+        } else {
+            analyzeNoCollection.visibility = TextView.GONE
+            analyzeProperties.visibility = LinearLayout.VISIBLE
+
+            collectionOptions.clear()
+            for(c in l)
+                if(!c.isInUse())
+                    collectionOptions.add(c.id.toString())
+            collectionsArrayAdapter.notifyDataSetChanged()
+        }
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()
