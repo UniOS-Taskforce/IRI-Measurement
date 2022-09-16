@@ -15,6 +15,7 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.simonmicro.irimeasurement.*
 import com.simonmicro.irimeasurement.services.StorageService
 import com.simonmicro.irimeasurement.Collection
+import com.simonmicro.irimeasurement.services.IRICalculationService
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -74,10 +75,10 @@ class AnalyzeFragment : Fragment() {
             valueAnimator.start()
         }
 
+        val that = this
         if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
             // Oh, we already got all permissions? So, let's display the users location live on the map!
             this.done = false
-            val that = this
             val handler = Handler()
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
@@ -122,8 +123,28 @@ class AnalyzeFragment : Fragment() {
                 position: Int,
                 id: Long
             ) {
-                var c = Collection(UUID.fromString(collectionOptions[position]))
-                view.findViewById<TextView>(R.id.analyzeDetails).text = c.toSnackbarString()
+                try {
+                    var c = Collection(UUID.fromString(collectionOptions[position]))
+                    view.findViewById<TextView>(R.id.analyzeDetails).text = c.toSnackbarString()
+
+                    // Analyze the data
+                    var iriSvc = IRICalculationService(c)
+
+                    // Determine the collected sections
+                    var sections = iriSvc.getSectionRecommendations()
+                    view.findViewById<TextView>(R.id.analyzeDynamicDetails).text =
+                        "Sections: ${sections.size - 1}"
+
+                    // Add a point for every section start
+                    for (sectionStart in sections) {
+                        var location = iriSvc.getLocation(sectionStart)
+                        that.addMarker(location.locLat, location.locLon, false)
+                    }
+                } catch(e: Exception) {
+                    Log.e(logTag, e.stackTraceToString())
+                    view.findViewById<TextView>(R.id.analyzeDynamicDetails).text =
+                        "Failed to analyze the collection: ${e.message}"
+                }
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {

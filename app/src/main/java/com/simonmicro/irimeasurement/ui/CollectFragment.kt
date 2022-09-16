@@ -120,8 +120,7 @@ class CollectFragment : Fragment() {
                 this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
             if (service.lastLocation != null) {
                 this.serviceLastLoc?.text = "↑ ${service.lastLocation!!.locHeight.format(2)} m, lon ${service.lastLocation!!.locLon.format(2)} °, lat ${service.lastLocation!!.locLat.format(2)} °"
-                var accuracy: String = ""
-                accuracy = "±${service.lastLocation!!.accuDir.format(2)} °, ↑ ±${service.lastLocation!!.accuHeight.format(2)} m, "
+                var accuracy = "±${service.lastLocation!!.accuDir.format(2)} °, ↑ ±${service.lastLocation!!.accuHeight.format(2)} m, "
                 accuracy += "±${service.lastLocation!!.accuLonLat.format(2)} m"
                 this.serviceLastLocAccu?.text = accuracy
                 this.serviceLastLocDir?.text = "${service.lastLocation!!.dir.format(2)} °, ${service.lastLocation!!.dirSpeed.format(2)} m/s"

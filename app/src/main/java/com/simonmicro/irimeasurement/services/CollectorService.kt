@@ -21,6 +21,7 @@ import com.simonmicro.irimeasurement.BuildConfig
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.ui.CollectFragment
+import com.simonmicro.irimeasurement.services.points.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
@@ -56,130 +57,27 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     var dataPointMutex = Mutex()
 
-    abstract inner class DataPoint {
-        var time: Long = System.currentTimeMillis()
-
-        abstract fun getName(): String
-        open fun getHeader(): String {
-            return "time"
-        }
-        open fun getRow(): String {
-            return this.time.toString()
-        }
-    }
-
-    inner class AccelerometerPoint(var accelX: Float, var accelY: Float, var accelZ: Float): DataPoint() {
-        override fun getName(): String {
-            return "accelerometer"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";X;Y;Z"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.accelX};${this.accelY};${this.accelZ}"
-        }
-    }
     var lastAccelerometerPoint: AccelerometerPoint? = null
     private var accelerometerHistory: ArrayList<AccelerometerPoint> = ArrayList()
 
-    inner class GravityPoint(var accelX: Float, var accelY: Float, var accelZ: Float): DataPoint() {
-        override fun getName(): String {
-            return "gravity"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";X;Y;Z"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.accelX};${this.accelY};${this.accelZ}"
-        }
-    }
     var lastGravityPoint: GravityPoint? = null
     private var gravityHistory: ArrayList<GravityPoint> = ArrayList()
 
-    inner class MagnetometerPoint(var fieldX: Float, var fieldY: Float, var fieldZ: Float): DataPoint() {
-        override fun getName(): String {
-            return "magnetometer"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";X;Y;Z"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.fieldX};${this.fieldY};${this.fieldZ}"
-        }
-    }
     var lastMagnetometerPoint: MagnetometerPoint? = null
     private var magnetometerHistory: ArrayList<MagnetometerPoint> = ArrayList()
 
-    inner class GyrometerPoint(var rotVelX: Float, var rotVelY: Float, var rotVelZ: Float): DataPoint() {
-        override fun getName(): String {
-            return "gyrometer"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";X;Y;Z"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.rotVelX};${this.rotVelY};${this.rotVelZ}"
-        }
-    }
     var lastGyrometerPoint: GyrometerPoint? = null
     private var gyrometerHistory: ArrayList<GyrometerPoint> = ArrayList()
 
-    inner class TemperaturePoint(var amount: Float): DataPoint() {
-        override fun getName(): String {
-            return "temperature"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";value"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.amount}"
-        }
-    }
     var lastTemperaturePoint: TemperaturePoint? = null
     private var temperatureHistory: ArrayList<TemperaturePoint> = ArrayList()
 
-    inner class PressurePoint(var amount: Float): DataPoint() {
-        override fun getName(): String {
-            return "pressure"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";value"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.amount}"
-        }
-    }
     var lastPressurePoint: PressurePoint? = null
     private var pressureHistory: ArrayList<PressurePoint> = ArrayList()
 
-    inner class HumidityPoint(var amount: Float): DataPoint() {
-        override fun getName(): String {
-            return "humidity"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";value"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${this.amount}"
-        }
-    }
     var lastHumidityPoint: HumidityPoint? = null
     private var humidityHistory: ArrayList<HumidityPoint> = ArrayList()
 
-    inner class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: Double,
-                              var accuDir: Float, var accuHeight: Float, var accuLonLat: Float,
-                              var dir: Float, var dirSpeed: Float, var queried: Boolean): DataPoint() {
-
-        override fun getName(): String {
-            return "location"
-        }
-        override fun getHeader(): String {
-            return super.getHeader() + ";location height;location longitude;location latitude;accuracy direction;accuracy height;accuracy longitude latitude; direction; direction speed;queried"
-        }
-        override fun getRow(): String {
-            return super.getRow() + ";${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed};${queried}"
-        }
-    }
     private var lastLocationObject: Location? = null
     var lastLocation: LocationPoint? = null
     private var locationHistory: ArrayList<LocationPoint> = ArrayList()

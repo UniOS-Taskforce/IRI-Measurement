@@ -75,7 +75,7 @@ class StorageService {
         fun listCollections(): ArrayList<Collection> {
             var all: File = this.getCollectionsRoot()
             var list: ArrayList<Collection> = ArrayList()
-            for(it: File in all.listFiles()) {
+            for(it: File in all.listFiles()!!) {
                 if(it.isDirectory) {
                     list.add(Collection(UUID.fromString(it.name)))
                 }

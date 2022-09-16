@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.services.StorageService
+import com.simonmicro.irimeasurement.services.points.*
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -13,7 +14,9 @@ import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
+import kotlin.collections.ArrayList
 import kotlin.io.path.Path
+import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.writeText
 
@@ -175,7 +178,7 @@ class Collection(val id: UUID) {
         Log.i(logTag, "Export of ${this.id} completed.")
     }
 
-    fun <T: CollectorService.DataPoint> addPoints(points: ArrayList<T>) {
+    fun <T: DataPoint> addPoints(points: ArrayList<T>) {
         if(this.meta.finished != null)
             throw RuntimeException("You tried to add to a completed collection")
         if(points.size == 0)
@@ -190,6 +193,23 @@ class Collection(val id: UUID) {
         if(points[0].getName() !in this.meta.dataSets)
             this.meta.dataSets.add(points[0].getName())
         this.writeMetaData()
+    }
+
+    fun <T: DataPoint> getPoints(factory: (row: List<String>?) -> T): List<T> {
+        var points: ArrayList<T> = ArrayList()
+        var pointsFile: File = Path(this.path.toString(), factory(null).getName() + ".csv").toFile()
+        if(pointsFile.exists()) {
+            // Now read the file line by line and recreate the points from it
+            var readHeader = false
+            for(line in pointsFile.readLines()) {
+                if(!readHeader) {
+                    readHeader = true
+                    continue
+                }
+                points.add(factory(line.split(";")))
+            }
+        }
+        return points
     }
 
     fun isInUse(): Boolean {
