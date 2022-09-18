@@ -38,8 +38,9 @@ class AnalyzeFragment : Fragment() {
     private lateinit var analyzeNoCollection: TextView
     private lateinit var analyzeProperties: LinearLayout
     data class AnalyzeStatus(var working: Boolean, var workingProgress: Int = -1, var workingText: String = "", var resultText: String = "") { }
+    var activeAnalysisThread: AnalysisThread? = null
 
-    private fun updateAnalyzeStatus(view: View, aStatus: AnalyzeStatus) {
+    fun updateAnalyzeStatus(view: View, aStatus: AnalyzeStatus) {
         var pContainer: LinearLayout = view.findViewById(R.id.analyzeProgressContainer)
         var pBar: ProgressBar = view.findViewById(R.id.analyzeProgress)
         var pText: TextView = view.findViewById(R.id.analyzeProgressDetails)
@@ -153,63 +154,8 @@ class AnalyzeFragment : Fragment() {
                 position: Int,
                 id: Long
             ) {
-                Thread {
-                    var aStatus = AnalyzeStatus(true, workingText = "Starting analysis...")
-                    CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                    try {
-                        aStatus.workingText = "Loading collection..."
-                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                        var c = Collection(UUID.fromString(collectionOptions[position]))
-                        aStatus.resultText = c.toSnackbarString()
-
-                        // Analyze the data
-                        aStatus.workingText = "Parsing data..."
-                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                        var iriSvc = IRICalculationService(c)
-
-                        // Determine the collected segments
-                        aStatus.workingText = "Searching segments..."
-                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                        var segments = iriSvc.getSectionRecommendations()
-                        aStatus.resultText += "\nSegments (overall): ${segments.size}"
-                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-
-                        // Add a point for every section start and end
-                        aStatus.workingText = "Calculating IRI per segment..."
-                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                        var segmentsSkipped: Int = 0
-                        var segmentsProcessed: Int = 0
-                        var segmentsProcessedIRIAvg: Double = 0.0
-                        for (i in segments.indices) {
-                            var segment = segments[i]
-                            var location = iriSvc.getLocation(segment.start)
-                            that.addMarker(location.locLat, location.locLon, false)
-                            location = iriSvc.getLocation(segment.end)
-                            that.addMarker(location.locLat, location.locLon, false)
-                            try {
-                                var iri: Double = iriSvc.getIRIValue(segment)
-                                segmentsProcessedIRIAvg += iri
-                                segmentsProcessed += 1
-                                Log.i(logTag, "IRI of segment ${segment}: $iri")
-                            } catch (e: Exception) {
-                                segmentsSkipped += 1
-                                Log.w(logTag, "Skipped segment ($segmentsSkipped) ${segment}: ${e.message}")
-                            }
-                            aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()
-                            CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                        }
-                        segmentsProcessedIRIAvg /= segmentsProcessed.toDouble()
-                        aStatus.resultText += "\nSegments (skipped): $segmentsSkipped"
-                        aStatus.resultText += "\nSegments (processed): $segmentsProcessed"
-                        aStatus.resultText += "\nSegments IRI (avg): $segmentsProcessedIRIAvg"
-                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                    } catch(e: Exception) {
-                        Log.e(logTag, e.stackTraceToString())
-                        aStatus.resultText = "Failed to analyze the collection: ${e.message}"
-                    }
-                    aStatus.working = false
-                    CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
-                }.start()
+                that.activeAnalysisThread = AnalysisThread(view, that, UUID.fromString(collectionOptions[position]))
+                that.activeAnalysisThread!!.start()
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
