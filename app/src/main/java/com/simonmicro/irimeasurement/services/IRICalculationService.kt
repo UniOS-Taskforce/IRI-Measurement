@@ -22,18 +22,29 @@ class IRICalculationService {
     private val collection: Collection
     private var collectionData: CollectionData
     enum class SectionEnd {
+        DUMMY,
         TODO
     }
-    inner class Section(
-        private var svc: IRICalculationService,
-        var start: Date,
-        var end: Date,
+    inner class Segment {
+        private var svc: IRICalculationService
+        var start: Date
+        var end: Date
+        var locations: List<EstimatedLocationPoint>
         var endReason: SectionEnd
-    ) {
+
+        constructor(svc: IRICalculationService, locations: List<EstimatedLocationPoint>, endReason: SectionEnd) {
+            assert(locations.isNotEmpty()) { "Every segment must have at least one location!" }
+            this.svc = svc
+            this.locations = locations
+            this.endReason = endReason
+            this.start = Date(this.locations[0].time)
+            this.end = Date(this.locations[this.locations.size - 1].time)
+        }
+
         override fun toString(): String {
-            var from: EstimatedLocationPoint = svc.getLocation(this.start)
-            var to: EstimatedLocationPoint = svc.getLocation(this.end)
-            return "Section ${start.time} to ${end.time} from $from to $to "
+            var from: EstimatedLocationPoint = this.locations[0]
+            var to: EstimatedLocationPoint = this.locations[this.locations.size - 1]
+            return "Segment ${from.time} to ${to.time} from $from to $to"
         }
     }
 
@@ -150,20 +161,21 @@ class IRICalculationService {
      * timepoints, on with e.g. the road changed, direction rapidly changed
      * or the user stood still for a while.
      */
-    fun getSectionRecommendations(): List<Section> {
+    fun getSectionRecommendations(): List<Segment> {
         // TODO - for now every location change will trigger a new "section"
-        var sections: ArrayList<Section> = ArrayList()
-        var last: LocationPoint? = null
+        var sections: ArrayList<Segment> = ArrayList()
+        var last: EstimatedLocationPoint? = null
         for(cDL in this.collectionData.location) {
             if(last == null || last != cDL) {
+                var now = EstimatedLocationPoint(cDL)
                 if(last != null)
-                    sections.add(Section(this, Date(last.time), Date(cDL.time), SectionEnd.TODO))
-                last = cDL
+                    sections.add(Segment(this, arrayListOf(last, now), SectionEnd.TODO))
+                last = now
             }
         }
         // Insert start and end dummy section if necessary
         if(sections.size == 0)
-            sections.add(Section(this, this.collectionData.start, this.collectionData.end, SectionEnd.TODO))
+            sections.add(Segment(this, arrayListOf(this.getLocation(this.collectionData.start), this.getLocation(this.collectionData.end)), SectionEnd.DUMMY))
         return sections
     }
 
@@ -190,9 +202,9 @@ class IRICalculationService {
         return b
     }
 
-    fun getEstimatedLocationDistance(from: EstimatedLocationPoint, to: EstimatedLocationPoint): Double {
+    fun getEstimatedLocationDistance(locations: List<EstimatedLocationPoint>): Double {
         // TODO Calc the distance over the intersecting points, not just from start to end
-        return this.getLocationDistance(from, to)
+        return this.getLocationDistance(locations[0], locations[locations.size - 1])
     }
 
     /**
@@ -201,16 +213,16 @@ class IRICalculationService {
      * of the different measurements by the sensors and try to match
      * them for optimal results.
      */
-    fun getIRIValue(section: Section): Double {
-        var dist: Double = this.getEstimatedLocationDistance(this.getLocation(section.start), this.getLocation(section.end))
+    fun getIRIValue(segment: Segment): Double {
+        var dist: Double = this.getEstimatedLocationDistance(segment.locations)
         if(dist <= 0.0)
             throw RuntimeException("The sections start and end are the same point (no distance!)")
         var sum: Double = 0.0 // The part over the fraction
         var lastAcc: AccelerometerPoint? = null
         for(acc: AccelerometerPoint in this.collectionData.accelerometer) {
-            if(Date(acc.time) < section.start)
+            if(Date(acc.time) < segment.start)
                 continue
-            if(Date(acc.time) > section.end)
+            if(Date(acc.time) > segment.end)
                 break
             if(lastAcc == null) {
                 lastAcc = acc

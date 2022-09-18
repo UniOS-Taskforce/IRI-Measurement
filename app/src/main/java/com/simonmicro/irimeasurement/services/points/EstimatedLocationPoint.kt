@@ -22,3 +22,17 @@ class EstimatedLocationPoint(var from: LocationPoint, var to: LocationPoint?,
     dirSpeed,
     queried,
     time) { }
+
+fun EstimatedLocationPoint(loc: LocationPoint) = EstimatedLocationPoint(
+    loc, null,
+    loc.locHeight,
+    loc.locLon,
+    loc.locLat,
+    loc.accuDir,
+    loc.accuHeight,
+    loc.accuLonLat,
+    loc.dir,
+    loc.dirSpeed,
+    loc.queried,
+    loc.time
+)
