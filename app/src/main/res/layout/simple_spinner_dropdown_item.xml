@@ -6,4 +6,5 @@
     android:layout_height="?attr/dropdownListPreferredItemHeight"
     android:gravity="center_vertical"
     android:padding="8dp"
-    android:ellipsize="marquee" />
+    android:ellipsize="marquee"
+    android:textColor="@color/design_default_color_on_primary" />
