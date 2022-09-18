@@ -1,6 +1,6 @@
 package com.simonmicro.irimeasurement.services.points
 
-class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: Double,
+open class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: Double,
                     var accuDir: Float, var accuHeight: Float, var accuLonLat: Float,
                     var dir: Float, var dirSpeed: Float, var queried: Boolean, time: Long? = null): DataPoint(time) {
 
@@ -14,6 +14,10 @@ class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: Doubl
 
     override fun getRow(): String {
         return super.getRow() + ";${locHeight};${locLon};${locLat};${accuDir};${accuHeight};${accuLonLat};${dir};${dirSpeed};${queried}"
+    }
+
+    override fun toString(): String {
+        return "(lon $locLon, lat $locLat, height $locHeight)"
     }
 }
 

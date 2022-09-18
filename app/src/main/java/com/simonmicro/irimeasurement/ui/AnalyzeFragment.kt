@@ -135,10 +135,17 @@ class AnalyzeFragment : Fragment() {
                     view.findViewById<TextView>(R.id.analyzeDynamicDetails).text =
                         "Sections: ${sections.size - 1}"
 
-                    // Add a point for every section start
-                    for (sectionStart in sections) {
-                        var location = iriSvc.getLocation(sectionStart)
+                    // Add a point for every section start and end
+                    for (section in sections) {
+                        var location = iriSvc.getLocation(section.start)
                         that.addMarker(location.locLat, location.locLon, false)
+                        location = iriSvc.getLocation(section.end)
+                        that.addMarker(location.locLat, location.locLon, false)
+                        try {
+                            Log.i(logTag, "IRI of section ${section}: ${iriSvc.getIRIValue(section)}")
+                        } catch (e: Exception) {
+                            Log.w(logTag, "Skipped section ${section}: ${e.message}")
+                        }
                     }
                 } catch(e: Exception) {
                     Log.e(logTag, e.stackTraceToString())
