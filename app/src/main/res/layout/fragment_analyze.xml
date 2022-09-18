@@ -55,30 +55,37 @@
                 android:minHeight="48dp"
                 android:spinnerMode="dropdown" />
 
+            <LinearLayout
+                android:id="@+id/analyzeProgressContainer"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <ProgressBar
+                    android:id="@+id/analyzeProgress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:indeterminate="true" />
+
+                <TextView
+                    android:id="@+id/analyzeProgressDetails"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="..."
+                    android:textAlignment="center"
+                    android:textStyle="italic" />
+
+                <Space
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp" />
+            </LinearLayout>
+
             <TextView
                 android:id="@+id/analyzeDetails"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="..." />
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="8dp" />
-
-            <TextView
-                android:id="@+id/analyzeDynamicDetails"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="..." />
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="8dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Work in progress..." />
         </LinearLayout>
 
     </LinearLayout>

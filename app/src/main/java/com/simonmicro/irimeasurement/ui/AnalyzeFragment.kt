@@ -16,6 +16,9 @@ import com.simonmicro.irimeasurement.*
 import com.simonmicro.irimeasurement.services.StorageService
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.services.IRICalculationService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
@@ -34,6 +37,33 @@ class AnalyzeFragment : Fragment() {
     private lateinit var collectionsArrayAdapter: ArrayAdapter<String>
     private lateinit var analyzeNoCollection: TextView
     private lateinit var analyzeProperties: LinearLayout
+    data class AnalyzeStatus(var working: Boolean, var workingProgress: Int = -1, var workingText: String = "", var resultText: String = "") { }
+
+    private fun updateAnalyzeStatus(view: View, aStatus: AnalyzeStatus) {
+        var pContainer: LinearLayout = view.findViewById(R.id.analyzeProgressContainer)
+        var pBar: ProgressBar = view.findViewById(R.id.analyzeProgress)
+        var pText: TextView = view.findViewById(R.id.analyzeProgressDetails)
+        var dText: TextView = view.findViewById(R.id.analyzeDetails)
+        if(aStatus.working) {
+            pContainer.visibility = LinearLayout.VISIBLE
+            if(aStatus.workingProgress != -1) {
+                pBar.progress = aStatus.workingProgress
+                pBar.isIndeterminate = false
+            } else
+                pBar.isIndeterminate = true
+        } else
+            pContainer.visibility = LinearLayout.GONE
+        if(aStatus.working && aStatus.workingText.isNotEmpty()) {
+            pText.visibility = TextView.VISIBLE
+            pText.text = aStatus.workingText
+        } else
+            pText.visibility = TextView.GONE
+        if(aStatus.resultText.isNotEmpty()) {
+            dText.visibility = TextView.VISIBLE
+            dText.text = aStatus.resultText
+        } else
+            dText.visibility = TextView.GONE
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         var view: View = inflater.inflate(R.layout.fragment_analyze, container, false)
@@ -123,35 +153,63 @@ class AnalyzeFragment : Fragment() {
                 position: Int,
                 id: Long
             ) {
-                try {
-                    var c = Collection(UUID.fromString(collectionOptions[position]))
-                    view.findViewById<TextView>(R.id.analyzeDetails).text = c.toSnackbarString()
+                Thread {
+                    var aStatus = AnalyzeStatus(true, workingText = "Starting analysis...")
+                    CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                    try {
+                        aStatus.workingText = "Loading collection..."
+                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                        var c = Collection(UUID.fromString(collectionOptions[position]))
+                        aStatus.resultText = c.toSnackbarString()
 
-                    // Analyze the data
-                    var iriSvc = IRICalculationService(c)
+                        // Analyze the data
+                        aStatus.workingText = "Parsing data..."
+                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                        var iriSvc = IRICalculationService(c)
 
-                    // Determine the collected sections
-                    var sections = iriSvc.getSectionRecommendations()
-                    view.findViewById<TextView>(R.id.analyzeDynamicDetails).text =
-                        "Sections: ${sections.size - 1}"
+                        // Determine the collected segments
+                        aStatus.workingText = "Searching segments..."
+                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                        var segments = iriSvc.getSectionRecommendations()
+                        aStatus.resultText += "\nSegments (overall): ${segments.size}"
+                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
 
-                    // Add a point for every section start and end
-                    for (section in sections) {
-                        var location = iriSvc.getLocation(section.start)
-                        that.addMarker(location.locLat, location.locLon, false)
-                        location = iriSvc.getLocation(section.end)
-                        that.addMarker(location.locLat, location.locLon, false)
-                        try {
-                            Log.i(logTag, "IRI of section ${section}: ${iriSvc.getIRIValue(section)}")
-                        } catch (e: Exception) {
-                            Log.w(logTag, "Skipped section ${section}: ${e.message}")
+                        // Add a point for every section start and end
+                        aStatus.workingText = "Calculating IRI per segment..."
+                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                        var segmentsSkipped: Int = 0
+                        var segmentsProcessed: Int = 0
+                        var segmentsProcessedIRIAvg: Double = 0.0
+                        for (i in segments.indices) {
+                            var segment = segments[i]
+                            var location = iriSvc.getLocation(segment.start)
+                            that.addMarker(location.locLat, location.locLon, false)
+                            location = iriSvc.getLocation(segment.end)
+                            that.addMarker(location.locLat, location.locLon, false)
+                            try {
+                                var iri: Double = iriSvc.getIRIValue(segment)
+                                segmentsProcessedIRIAvg += iri
+                                segmentsProcessed += 1
+                                Log.i(logTag, "IRI of segment ${segment}: $iri")
+                            } catch (e: Exception) {
+                                segmentsSkipped += 1
+                                Log.w(logTag, "Skipped segment ($segmentsSkipped) ${segment}: ${e.message}")
+                            }
+                            aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()
+                            CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
                         }
+                        segmentsProcessedIRIAvg /= segmentsProcessed.toDouble()
+                        aStatus.resultText += "\nSegments (skipped): $segmentsSkipped"
+                        aStatus.resultText += "\nSegments (processed): $segmentsProcessed"
+                        aStatus.resultText += "\nSegments IRI (avg): $segmentsProcessedIRIAvg"
+                        CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                    } catch(e: Exception) {
+                        Log.e(logTag, e.stackTraceToString())
+                        aStatus.resultText = "Failed to analyze the collection: ${e.message}"
                     }
-                } catch(e: Exception) {
-                    Log.e(logTag, e.stackTraceToString())
-                    view.findViewById<TextView>(R.id.analyzeDynamicDetails).text =
-                        "Failed to analyze the collection: ${e.message}"
-                }
+                    aStatus.working = false
+                    CoroutineScope(Dispatchers.Main).launch { that.updateAnalyzeStatus(view, aStatus) }
+                }.start()
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
@@ -159,6 +217,7 @@ class AnalyzeFragment : Fragment() {
             }
         }
         this.initAnalyzeProperties()
+        this.updateAnalyzeStatus(view, AnalyzeStatus(false))
 
         return view
     }
