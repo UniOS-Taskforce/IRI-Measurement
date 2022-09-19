@@ -110,7 +110,8 @@ class Collection(val id: UUID) {
                 "Finished: ${this.meta.finished}\n" +
                 "Points: ${this.meta.pointCount}\n" +
                 "Sets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\n" +
-                "Size: ${StorageService.getBytesBetterString(this.getSizeBytes())}"
+                "Size: ${StorageService.getBytesBetterString(this.getSizeBytes())}\n" +
+                "Version: ${this.meta.version}"
     }
 
     fun getMeta(): CollectionMeta {
