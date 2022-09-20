@@ -26,6 +26,7 @@ class Collection(val id: UUID) {
         var finished: Date? = null,
         var pointCount: Long = 0,
         var dataSets: ArrayList<String> = ArrayList(),
+        var locationTags: ArrayList<String> = ArrayList(),
         var version: String = BuildConfig.VERSION_NAME
     )
 
@@ -110,6 +111,7 @@ class Collection(val id: UUID) {
                 "Finished: ${this.meta.finished}\n" +
                 "Points: ${this.meta.pointCount}\n" +
                 "Sets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\n" +
+                "Location Tags: ${this.meta.locationTags.joinToString(prefix = "{", postfix = "}") { it }}\n" +
                 "Size: ${StorageService.getBytesBetterString(this.getSizeBytes())}\n" +
                 "Version: ${this.meta.version}"
     }
@@ -144,7 +146,8 @@ class Collection(val id: UUID) {
         return size
     }
 
-    fun completed() {
+    fun completed(locationTags: ArrayList<String>) {
+        this.meta.locationTags = locationTags
         this.meta.finished = Date()
         this.writeMetaData()
     }

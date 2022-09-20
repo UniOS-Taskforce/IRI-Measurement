@@ -219,7 +219,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.status = DataCollectorWorkerStatus.SHUTDOWN
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
-        this.collection!!.completed()
+        this.collection!!.completed(LocationService.getLocationTags())
         if(!this.locService!!.stopLocationUpdates(this.locCallback, this))
             Log.w(logTag, "Failed to unregister from location updates - did we ever subscribe successfully?")
         if(this.wakelock!!.isHeld)

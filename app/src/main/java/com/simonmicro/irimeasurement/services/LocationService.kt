@@ -34,18 +34,27 @@ class LocationService {
         private val logTag = LocationService::class.java.name
         private lateinit var snackbarTarget: View
         private var fusedLocationClient: FusedLocationProviderClient? = null
+        private var locationTags = ArrayList<String>()
 
         fun initialize(activity: AppCompatActivity, snackbarTarget: View) {
             this.snackbarTarget = snackbarTarget
             val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity)
             if(googlePlayStatus != ConnectionResult.SUCCESS) {
                 this.showSnack("Google Play Services are not available (${this.serviceStatusToString(googlePlayStatus)}). Using native Android providers instead...")
+                locationTags.add("native")
             } else {
                 val builder = LocationSettingsRequest.Builder()
 
                 val client: SettingsClient = LocationServices.getSettingsClient(activity)
                 client.checkLocationSettings(builder.build()).addOnSuccessListener {
                     this.showSnack("Google Play services are used for location (GPS? ${it.locationSettingsStates?.isGpsUsable}, NET? ${it.locationSettingsStates?.isNetworkLocationUsable}, BLE? ${it.locationSettingsStates?.isBleUsable}).")
+                    if(it.locationSettingsStates?.isGpsUsable == true)
+                        locationTags.add("GPS")
+                    if(it.locationSettingsStates?.isBleUsable == true)
+                        locationTags.add("BLE")
+                    if(it.locationSettingsStates?.isNetworkLocationUsable == true)
+                        locationTags.add("NET")
+                    locationTags.add("GLS")
                     fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
                 }.addOnFailureListener { exception ->
                     if (exception is ResolvableApiException){
@@ -61,6 +70,10 @@ class LocationService {
                     }
                 }
             }
+        }
+
+        fun getLocationTags(): ArrayList<String> {
+            return locationTags
         }
 
         private fun showSnack(msg: String) {
@@ -185,7 +198,7 @@ class LocationService {
             (!requirePrecise && ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
             true
         } else {
-            this.showWarning("A permission for location is missing. The requested function is may not available.", showWarning)
+            this.showWarning("A permission for location is or was missing. The requested function is may not available.", showWarning)
             false
         }
     }
