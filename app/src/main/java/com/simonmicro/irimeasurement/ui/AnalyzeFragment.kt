@@ -12,6 +12,7 @@ import android.widget.*
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.gms.tasks.Task
 import com.simonmicro.irimeasurement.*
 import com.simonmicro.irimeasurement.services.StorageService
 import com.simonmicro.irimeasurement.Collection
@@ -114,28 +115,40 @@ class AnalyzeFragment : Fragment() {
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
                     if(that.done) return
-                    val loc: Location? = HomeScreen.locService!!.getUserLocation()
-                    if(loc != null)
-                        that.addMarker(loc.latitude, loc.longitude, true)
+                    HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
+                        Log.d(logTag, "Pushing current location to map: $it")
+                        if(it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
+                            that.addMarker(it.latitude, it.longitude, true)
+                    }?.addOnFailureListener {
+                        Log.e(logTag, it.stackTraceToString())
+                    }
                     handler.postDelayed(this, 1000)
                 }
             }
             handler.post(runnableCode)
 
             // Zoom into the map initially...
-            val loc: Location? = HomeScreen.locService!!.getUserLocation()
-            val zoom: Float = 0.02f
-            if(loc != null) {
-                map!!.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
+            HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
+                Log.d(logTag, "Resetting zoom for location $it...")
+                val zoom: Float = 0.02f
+                if(it != null) {
                     val boundingBox = BoundingBox(
-                        loc.latitude + zoom,
-                        loc.longitude + zoom,
-                        loc.latitude - zoom,
-                        loc.longitude - zoom
+                        it.latitude + zoom,
+                        it.longitude + zoom,
+                        it.latitude - zoom,
+                        it.longitude - zoom
                     )
+                    // In case the map was not rendered yet...
+                    map!!.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
+                        map!!.zoomToBoundingBox(boundingBox, false, 100)
+                        map!!.invalidate()
+                    }
+                    // In case the map is already visible...
                     map!!.zoomToBoundingBox(boundingBox, false, 100)
                     map!!.invalidate()
                 }
+            }?.addOnFailureListener {
+                Log.e(logTag, it.stackTraceToString())
             }
         }
 

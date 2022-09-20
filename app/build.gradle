@@ -34,11 +34,8 @@ android {
 }
 
 dependencies {
-    /*
-     * This application uses no Google (Play / Location) services, as it was
-     * developed exclusively on devices without any Google libraries.
-     */
     implementation 'org.osmdroid:osmdroid-android:6.1.14'
+    implementation 'com.google.android.gms:play-services-location:20.0.0'
 
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.5.1'

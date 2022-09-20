@@ -17,6 +17,8 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.google.android.gms.location.LocationCallback
+import com.google.android.gms.location.LocationResult
 import com.simonmicro.irimeasurement.BuildConfig
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.Collection
@@ -48,6 +50,15 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     private var magSensor: Sensor? = null
     private var pressSensor: Sensor? = null
     private var humiSensor: Sensor? = null
+
+    inner class CollectorLocationCallback(private var service: CollectorService): LocationCallback() {
+        override fun onLocationResult(lRes: LocationResult) {
+            super.onLocationResult(lRes)
+            for(loc: Location in lRes.locations)
+                this.service.saveLocation(loc, false)
+        }
+    }
+    private var locCallback: CollectorLocationCallback = CollectorLocationCallback(this)
 
     var status: DataCollectorWorkerStatus = DataCollectorWorkerStatus.DEAD
     var startTime: Long = System.currentTimeMillis()
@@ -105,7 +116,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.collection = Collection(UUID.randomUUID())
         this.collection!!.create()
         // Register loop, which is required by this ancient API to process incoming location updates
-        if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this))
+        if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this.locCallback, this))
             Log.w(logTag, "Failed to register for location updates - still using query based solution...")
         // Get wakelock
         this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector")
@@ -179,18 +190,20 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         }
 
         // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
-        var location: Location? = this.locService!!.getUserLocation(showWarning = false)
-        if(location != null && location != this.lastLocationObject) {
-            this.saveLocation(location, true)
-            this.lastLocationObject = location
-        }
+        if(this.lastLocation == null || Date().time - this.lastLocation!!.time > 5 * 1000)
+            this.locService!!.getUserLocation(showWarning = false)?.addOnSuccessListener {
+                if(it != this.lastLocationObject) {
+                    this.saveLocation(it, true)
+                    this.lastLocationObject = it
+                }
+            }
 
         return !done
     }
 
     private fun run() {
         this.status = DataCollectorWorkerStatus.ALIVE
-        CollectFragment.asyncUpdateUI() // TODO auto-call this on setters!
+        CollectFragment.asyncUpdateUI()
 
         var wantProceed = true
         while (!this.requestStop && wantProceed) {
@@ -207,7 +220,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         this.collection!!.completed()
-        if(!this.locService!!.stopLocationUpdates(this))
+        if(!this.locService!!.stopLocationUpdates(this.locCallback, this))
             Log.w(logTag, "Failed to unregister from location updates - did we ever subscribe successfully?")
         if(this.wakelock!!.isHeld)
             this.wakelock!!.release()

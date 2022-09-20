@@ -26,16 +26,14 @@ class HomeScreen : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         window.requestFeature(Window.FEATURE_ACTION_BAR)
 
-        // Initialize the snackbar target, so the service can remind the user to grant permissions
-        LocationService.snackbarTarget = this.findViewById(R.id.container)
-        HomeScreen.locService = LocationService(this)
-
         // Init other services
+        HomeScreen.locService = LocationService(this)
         StorageService.initWithContext(this)
 
         // Init action bar
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        LocationService.initialize(this, this.findViewById(R.id.container))// Init this service after the binding (and therfore snackbar-target) is available
         binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME
 
         // Prepare the UI
