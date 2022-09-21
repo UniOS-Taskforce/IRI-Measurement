@@ -3,6 +3,15 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+def getGitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
 android {
     compileSdk 33
 
@@ -10,8 +19,8 @@ android {
         applicationId "com.simonmicro.irimeasurement"
         minSdk 27
         targetSdk 33
-        versionCode 9
-        versionName "1.4.1"
+        versionCode 10
+        versionName "1.4.2-${getGitHash()}"
     }
 
     buildTypes {
