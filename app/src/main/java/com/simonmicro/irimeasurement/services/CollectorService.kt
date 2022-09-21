@@ -121,7 +121,6 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.log.w("Failed to register for location updates - still using query based solution...")
         // Get wakelock
         this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector")
-        this.wakelock!!.acquire()
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
@@ -201,6 +200,14 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
                 this.log.e("Failed to query location: ${it.stackTraceToString()}")
             }
 
+        // Refresh the wakelock
+        try {
+            if (!this.wakelock!!.isHeld)
+                this.wakelock!!.acquire(10 * 1000) // Auto-expire in 10 seconds
+        } catch (e: Exception) {
+            this.log.w("Failed to acquire the wake-lock: ${e.stackTraceToString()}")
+        }
+
         return !done
     }
 
@@ -264,16 +271,14 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(applicationContext.getString(R.string.service_notification_channel_id),
-                applicationContext.getString(R.string.service_notification_channel_title), importance).apply {
-                    description = applicationContext.getString(R.string.service_notification_channel_description)
-                }
-            // Register the channel with the system
-            val notificationManager: NotificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(applicationContext.getString(R.string.service_notification_channel_id),
+            applicationContext.getString(R.string.service_notification_channel_title), importance).apply {
+                description = applicationContext.getString(R.string.service_notification_channel_description)
+            }
+        // Register the channel with the system
+        val notificationManager: NotificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     private fun createForegroundInfo(): ForegroundInfo {
@@ -297,31 +302,31 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         runBlocking { dataPointMutex.lock() }
         this.dataPointCount++
         if (event.sensor.type == accelSensor?.type) {
-            var a = AccelerometerPoint(event.values[0], event.values[1], event.values[2])
+            val a = AccelerometerPoint(event.values[0], event.values[1], event.values[2])
             this.lastAccelerometerPoint = a
             this.accelerometerHistory.add(a)
         } else if (event.sensor.type == gravSensor?.type) {
-            var g = GravityPoint(event.values[0], event.values[1], event.values[2])
+            val g = GravityPoint(event.values[0], event.values[1], event.values[2])
             this.lastGravityPoint = g
             this.gravityHistory.add(g)
         } else if (event.sensor.type == magSensor?.type) {
-            var m = MagnetometerPoint(event.values[0], event.values[1], event.values[2])
+            val m = MagnetometerPoint(event.values[0], event.values[1], event.values[2])
             this.lastMagnetometerPoint = m
             this.magnetometerHistory.add(m)
         } else if (event.sensor.type == gyroSensor?.type) {
-            var g = GyrometerPoint(event.values[0], event.values[1], event.values[2])
+            val g = GyrometerPoint(event.values[0], event.values[1], event.values[2])
             this.lastGyrometerPoint = g
             this.gyrometerHistory.add(g)
         } else if (event.sensor.type == tempSensor?.type) {
-            var t = TemperaturePoint(event.values[0])
+            val t = TemperaturePoint(event.values[0])
             this.lastTemperaturePoint = t
             this.temperatureHistory.add(t)
         } else if (event.sensor.type == pressSensor?.type) {
-            var p = PressurePoint(event.values[0])
+            val p = PressurePoint(event.values[0])
             this.lastPressurePoint = p
             this.pressureHistory.add(p)
         } else if (event.sensor.type == humiSensor?.type) {
-            var h = HumidityPoint(event.values[0])
+            val h = HumidityPoint(event.values[0])
             this.lastHumidityPoint = h
             this.humidityHistory.add(h)
         } else
@@ -333,7 +338,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     private fun saveLocation(location: Location, wasQueried: Boolean) {
         runBlocking { dataPointMutex.lock() }
         this.dataPointCount++
-        var l = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed, wasQueried)
+        val l = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed, wasQueried)
         this.lastLocation = l
         this.locationHistory.add(l)
         runBlocking { dataPointMutex.unlock() }
