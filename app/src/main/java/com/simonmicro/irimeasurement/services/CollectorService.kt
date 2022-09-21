@@ -11,7 +11,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.os.Build
 import android.os.PowerManager
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
@@ -36,7 +35,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     private var nId = 0
     private var notificationBuilder: NotificationCompat.Builder? = null
-    private val logTag = CollectorService::class.java.name
+    private val log = com.simonmicro.irimeasurement.util.Log(CollectorService::class.java.name)
     private lateinit var sensorManager: SensorManager
     private var requestStop: Boolean = false
     private var locService: LocationService? = null
@@ -115,9 +114,11 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         // Create new collection for this run
         this.collection = Collection(UUID.randomUUID())
         this.collection!!.create()
+        // Send the logs to the collection!
+        com.simonmicro.irimeasurement.util.Log.sendLogsToCollection(this.collection)
         // Register loop, which is required by this ancient API to process incoming location updates
         if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this.locCallback, this))
-            Log.w(logTag, "Failed to register for location updates - still using query based solution...")
+            this.log.w("Failed to register for location updates - still using query based solution...")
         // Get wakelock
         this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector")
         this.wakelock!!.acquire()
@@ -131,13 +132,13 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         magSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
         pressSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)
         humiSensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY)
-        if(accelSensor == null) Log.w(logTag, "No accelerometer found!") else sensorManager.registerListener(this, accelSensor, speed)
-        if(tempSensor == null) Log.w(logTag, "No temperature found!") else sensorManager.registerListener(this, tempSensor, speed)
-        if(gravSensor == null) Log.w(logTag, "No gravity found!") else sensorManager.registerListener(this, gravSensor, speed)
-        if(gyroSensor == null) Log.w(logTag, "No gyroscope found!") else sensorManager.registerListener(this, gyroSensor, speed)
-        if(magSensor == null) Log.w(logTag, "No magnetometer found!") else sensorManager.registerListener(this, magSensor, speed)
-        if(pressSensor == null) Log.w(logTag, "No pressure found!") else sensorManager.registerListener(this, pressSensor, speed)
-        if(humiSensor == null) Log.w(logTag, "No humidity found!") else sensorManager.registerListener(this, humiSensor, speed)
+        if(accelSensor == null) this.log.w("No accelerometer found!") else sensorManager.registerListener(this, accelSensor, speed)
+        if(tempSensor == null) this.log.w("No temperature found!") else sensorManager.registerListener(this, tempSensor, speed)
+        if(gravSensor == null) this.log.w("No gravity found!") else sensorManager.registerListener(this, gravSensor, speed)
+        if(gyroSensor == null) this.log.w("No gyroscope found!") else sensorManager.registerListener(this, gyroSensor, speed)
+        if(magSensor == null) this.log.w("No magnetometer found!") else sensorManager.registerListener(this, magSensor, speed)
+        if(pressSensor == null) this.log.w("No pressure found!") else sensorManager.registerListener(this, pressSensor, speed)
+        if(humiSensor == null) this.log.w("No humidity found!") else sensorManager.registerListener(this, humiSensor, speed)
     }
 
     /**
@@ -196,6 +197,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
                     this.saveLocation(it, true)
                     this.lastLocationObject = it
                 }
+            }?.addOnFailureListener {
+                this.log.e("Failed to query location: ${it.stackTraceToString()}")
             }
 
         return !done
@@ -219,9 +222,10 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.status = DataCollectorWorkerStatus.SHUTDOWN
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
+        com.simonmicro.irimeasurement.util.Log.sendLogsToCollection(null) // Stop logging to collection
         this.collection!!.completed(LocationService.getLocationTags())
         if(!this.locService!!.stopLocationUpdates(this.locCallback, this))
-            Log.w(logTag, "Failed to unregister from location updates - did we ever subscribe successfully?")
+            this.log.w("Failed to unregister from location updates - did we ever subscribe successfully?")
         if(this.wakelock!!.isHeld)
             this.wakelock!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
@@ -235,7 +239,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.run()
         } catch (e: Exception) {
             this.collection?.addCrashReport(e)
-            Log.e(logTag, "Unexpected exception in service: " + e.stackTraceToString())
+            this.log.e("Unexpected exception in service: ${e.stackTraceToString()}")
             wasRunOK = false
         }
 
@@ -243,7 +247,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.shutdown()
         } catch(e: Exception) {
             this.collection?.addCrashReport(e)
-            Log.e(logTag, "Unexpected exception in service shutdown: " + e.stackTraceToString())
+            this.log.e("Unexpected exception in service shutdown: ${e.stackTraceToString()}")
         }
 
         this.status = DataCollectorWorkerStatus.DEAD

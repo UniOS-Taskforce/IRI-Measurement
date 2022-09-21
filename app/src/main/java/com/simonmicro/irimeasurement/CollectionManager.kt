@@ -1,7 +1,6 @@
 package com.simonmicro.irimeasurement
 
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView.OnItemClickListener
@@ -23,7 +22,7 @@ import kotlin.collections.ArrayList
 
 class CollectionManager : AppCompatActivity() {
     private lateinit var collectionsArrayAdapter: CollectionViewAdapter
-    private val logTag = CollectionManager::class.java.name
+    private val log = com.simonmicro.irimeasurement.util.Log(CollectionManager::class.java.name)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,7 +94,7 @@ class CollectionManager : AppCompatActivity() {
                     Snackbar.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
-                Log.e(logTag, "Export of ${cv.collection.id} failed: " + e.stackTraceToString())
+                this.log.e("Export of ${cv.collection.id} failed: " + e.stackTraceToString())
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
                     "Export of ${cv.collection.id} failed: " + e.message,
@@ -123,15 +122,15 @@ class CollectionManager : AppCompatActivity() {
                     "Starting import...",
                     Snackbar.LENGTH_LONG
                 ).show()
-                Log.d(logTag, "User wants to import $uri")
+                this.log.d("User wants to import $uri")
                 var uuidHint: UUID? = null
                 var uuidLength: Int = UUID.randomUUID().toString().length
                 if(uri.path != null && uri.path!!.length > uuidLength + ".zip".length) {
                     try {
                         uuidHint = UUID.fromString(uri.path!!.substring(uri.path!!.length - ".zip".length - uuidLength, uri.path!!.length - ".zip".length))
                     } catch(e: Exception) {
-                        Log.w(logTag, "Failed to parse long enough URI ($uri) for file name: ${e.stackTraceToString()}")
-                        Log.w(logTag, e.stackTraceToString())
+                        this.log.w("Failed to parse long enough URI ($uri) for file name: ${e.stackTraceToString()}")
+                        this.log.w(e.stackTraceToString())
                     }
                 }
                 val collectionOldCount = StorageService.listCollections().size
@@ -153,7 +152,7 @@ class CollectionManager : AppCompatActivity() {
                     Snackbar.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
-                Log.e(logTag, "Import failed: " + e.stackTraceToString())
+                this.log.e("Import failed: ${e.stackTraceToString()}")
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
                     "Import failed: " + e.message,

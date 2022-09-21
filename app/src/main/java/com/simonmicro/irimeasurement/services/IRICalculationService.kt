@@ -1,6 +1,5 @@
 package com.simonmicro.irimeasurement.services
 
-import android.util.Log
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.services.points.*
 import java.lang.Double.max
@@ -12,7 +11,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 class IRICalculationService {
-    private val logTag = IRICalculationService::class.java.name
+    private val log = com.simonmicro.irimeasurement.util.Log(IRICalculationService::class.java.name)
     private data class CollectionData(
         var start: Date,
         var end: Date,
@@ -117,11 +116,11 @@ class IRICalculationService {
             to = back
         }
         if(from == null) {
-            Log.w(logTag, "Wanted: " + time.toString())
-            Log.w(logTag, "Has from: " + from.toString())
-            Log.w(logTag, "Has to: " + to.toString())
-            Log.w(logTag, "Has from (really): " + this.collectionData.location[0].time.toString())
-            Log.w(logTag, "Has to (really): " + this.collectionData.location[this.collectionData.location.size - 1].time.toString())
+            this.log.w("Wanted: " + time.toString())
+            this.log.w("Has from: " + from.toString())
+            this.log.w("Has to: " + to.toString())
+            this.log.w("Has from (really): " + this.collectionData.location[0].time.toString())
+            this.log.w("Has to (really): " + this.collectionData.location[this.collectionData.location.size - 1].time.toString())
             throw RuntimeException("Failed to find from-location!")
         }
         if(to == null)

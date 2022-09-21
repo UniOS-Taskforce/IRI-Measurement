@@ -3,7 +3,6 @@ package com.simonmicro.irimeasurement.ui
 import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +28,7 @@ fun Float.format(digits: Int) = "%.${digits}f".format(this)
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 class CollectFragment : Fragment() {
-    private val logTag = CollectFragment::class.java.name
+    private val log = com.simonmicro.irimeasurement.util.Log(CollectFragment::class.java.name)
     private var serviceControlButton: Button? = null
     private var serviceStatus: TextView? = null
     private var serviceUptime: TextView? = null
@@ -166,10 +165,10 @@ class CollectFragment : Fragment() {
         this.serviceControlButton = view.findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
             if(this.getServiceUIState()) {
-                Log.i(logTag, "Stopping collector...")
+                this.log.i("Stopping collector...")
                 WorkManager.getInstance(this.requireContext()).cancelUniqueWork(getString(R.string.service_id))
             } else if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
-                Log.i(logTag, "Starting collector...")
+                this.log.i("Starting collector...")
                 WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
                     getString(R.string.service_id),
                     ExistingWorkPolicy.REPLACE,

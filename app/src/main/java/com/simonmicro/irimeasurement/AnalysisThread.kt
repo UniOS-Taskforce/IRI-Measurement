@@ -1,6 +1,5 @@
 package com.simonmicro.irimeasurement
 
-import android.util.Log
 import android.view.View
 import com.simonmicro.irimeasurement.services.IRICalculationService
 import com.simonmicro.irimeasurement.ui.AnalyzeFragment
@@ -10,7 +9,7 @@ import kotlinx.coroutines.launch
 import java.util.*
 
 class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var collectionUUID: UUID): Thread() {
-    private val logTag = AnalysisThread::class.java.name
+    private val log = com.simonmicro.irimeasurement.util.Log(AnalysisThread::class.java.name)
     private var aStatus = AnalyzeFragment.AnalyzeStatus(false)
     private var expectedKillString = "Active analysis thread reference changed - terminating this instance!"
 
@@ -62,10 +61,10 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                     var iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
                     segmentsProcessed += 1
-                    Log.i(logTag, "IRI of segment ${segment}: $iri")
+                    this.log.i("IRI of segment ${segment}: $iri")
                 } catch (e: Exception) {
                     segmentsSkipped += 1
-                    Log.w(logTag, "Skipped segment ($segmentsSkipped) ${segment}: ${e.message}")
+                    this.log.w("Skipped segment ($segmentsSkipped) ${segment}: ${e.message}")
                 }
                 this.aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()
                 this.pushViewUpdate()
@@ -77,10 +76,10 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
         } catch(e: Exception) {
             if(e.message == this.expectedKillString) {
                 // No! Don't do anything after this point! Just die NOW!
-                Log.i(logTag, this.expectedKillString)
+                this.log.i(this.expectedKillString)
                 return
             }
-            Log.e(logTag, e.stackTraceToString())
+            this.log.e("Analysis failed: ${e.stackTraceToString()}")
             aStatus.resultText = "Failed to analyze the collection: ${e.message}"
         }
         this.aStatus.working = false

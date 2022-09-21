@@ -12,7 +12,6 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -31,7 +30,7 @@ class LocationService {
     private val context: Context
 
     companion object {
-        private val logTag = LocationService::class.java.name
+        private val log = com.simonmicro.irimeasurement.util.Log(LocationService::class.java.name)
         private lateinit var snackbarTarget: View
         private var fusedLocationClient: FusedLocationProviderClient? = null
         private var locationTags = ArrayList<String>()
@@ -58,14 +57,14 @@ class LocationService {
                     fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
                 }.addOnFailureListener { exception ->
                     if (exception is ResolvableApiException){
-                        // Location settings are not satisfied, but this can be fixed by showing the user a dialog.
+                        // Location settings are not satisfied, but this can be fixed by showing the user a diathis.log.
                         try {
                             // Show the dialog by calling startResolutionForResult(),
                             // and check the result in onActivityResult().
                             exception.startResolutionForResult(activity, 1234)
                         } catch (sendEx: IntentSender.SendIntentException) {
                             // Ignore the error.
-                            Log.w(logTag, sendEx.stackTraceToString())
+                            this.log.w(sendEx.stackTraceToString())
                         }
                     }
                 }
@@ -115,7 +114,7 @@ class LocationService {
         if(fusedLocationClient != null) {
             // This code can be used to determine if we even could get a location...
             // fusedLocationClient!!.locationAvailability.addOnSuccessListener {
-            //    Log.d(logTag, "avail? $it, ${it.isLocationAvailable}")
+            //    this.log.d(${it.isLocationAvailable}")
             // }
 
             return fusedLocationClient!!.lastLocation
@@ -187,7 +186,7 @@ class LocationService {
     }
 
     private fun showWarning(msg: String, showWarning: Boolean) {
-        Log.i(logTag, msg)
+        log.i(msg)
         if(!showWarning)
             return
         showSnack(msg)
@@ -219,7 +218,7 @@ class LocationService {
 
         // Try to get them!
         if (permissionsToRequest.size > 0) {
-            Log.d(logTag, "We are missing ${permissionsToRequest.size} permissions. Requesting...")
+            log.d("We are missing ${permissionsToRequest.size} permissions. Requesting...")
             ActivityCompat.requestPermissions(activity, permissionsToRequest.toTypedArray(), REQUEST_PERMISSIONS_REQUEST_CODE)
             return false
         }

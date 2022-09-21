@@ -4,7 +4,6 @@ import android.animation.ValueAnimator
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,7 +31,7 @@ import kotlin.collections.ArrayList
 class AnalyzeFragment : Fragment() {
     private var map: MapView? = null
     private var mapExpanded: Boolean = true
-    private val logTag = AnalyzeFragment::class.java.name
+    private val log = com.simonmicro.irimeasurement.util.Log(AnalyzeFragment::class.java.name)
     private var done: Boolean = false
     private var collectionOptions: ArrayList<String> = ArrayList()
     private lateinit var collectionsArrayAdapter: ArrayAdapter<String>
@@ -72,7 +71,7 @@ class AnalyzeFragment : Fragment() {
 
         // Init valid UserAgent for the map (otherwise tiles won't load)
         val s = BuildConfig.APPLICATION_ID + "@" + BuildConfig.VERSION_NAME
-        Log.i(logTag, "Using agent: '$s'")
+        this.log.i("Using agent: '$s'")
         Configuration.getInstance().userAgentValue = s
 
         // Init the map
@@ -116,11 +115,11 @@ class AnalyzeFragment : Fragment() {
                 override fun run() {
                     if(that.done) return
                     HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
-                        Log.d(logTag, "Pushing current location to map: $it")
+                        log.d("Pushing current location to map: $it")
                         if(it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
                             that.addMarker(it.latitude, it.longitude, true)
                     }?.addOnFailureListener {
-                        Log.e(logTag, it.stackTraceToString())
+                        log.e("Failed to push current position to map: ${it.stackTraceToString()}")
                     }
                     handler.postDelayed(this, 1000)
                 }
@@ -129,7 +128,7 @@ class AnalyzeFragment : Fragment() {
 
             // Zoom into the map initially...
             HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
-                Log.d(logTag, "Resetting zoom for location $it...")
+                this.log.d("Resetting zoom for location $it...")
                 val zoom: Float = 0.02f
                 if(it != null) {
                     val boundingBox = BoundingBox(
@@ -148,7 +147,7 @@ class AnalyzeFragment : Fragment() {
                     map!!.invalidate()
                 }
             }?.addOnFailureListener {
-                Log.e(logTag, it.stackTraceToString())
+                this.log.e("Failed to set zoom on map: ${it.stackTraceToString()}")
             }
         }
 
