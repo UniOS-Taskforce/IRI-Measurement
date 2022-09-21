@@ -24,6 +24,7 @@ import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.snackbar.Snackbar
+import java.lang.Math.min
 
 class LocationService {
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 1
@@ -39,14 +40,14 @@ class LocationService {
             this.snackbarTarget = snackbarTarget
             val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity)
             if(googlePlayStatus != ConnectionResult.SUCCESS) {
-                this.showSnack("Google Play Services are not available (${this.serviceStatusToString(googlePlayStatus)}). Using native Android providers instead...")
+                this.showWarning("Google Play Services are not available (${this.serviceStatusToString(googlePlayStatus)}). Using native Android providers instead...", true)
                 locationTags.add("native")
             } else {
                 val builder = LocationSettingsRequest.Builder()
 
                 val client: SettingsClient = LocationServices.getSettingsClient(activity)
                 client.checkLocationSettings(builder.build()).addOnSuccessListener {
-                    this.showSnack("Google Play services are used for location (GPS? ${it.locationSettingsStates?.isGpsUsable}, NET? ${it.locationSettingsStates?.isNetworkLocationUsable}, BLE? ${it.locationSettingsStates?.isBleUsable}).")
+                    this.showWarning("Google Play services are used for location (GPS? ${it.locationSettingsStates?.isGpsUsable}, NET? ${it.locationSettingsStates?.isNetworkLocationUsable}, BLE? ${it.locationSettingsStates?.isBleUsable}).", true)
                     if(it.locationSettingsStates?.isGpsUsable == true)
                         locationTags.add("GPS")
                     if(it.locationSettingsStates?.isBleUsable == true)
@@ -75,10 +76,13 @@ class LocationService {
             return locationTags
         }
 
-        private fun showSnack(msg: String) {
+        private fun showWarning(msg: String, showSnack: Boolean) {
+            log.w(msg)
+            if(!showSnack)
+                return
             val snackBar = Snackbar.make(snackbarTarget, msg, Snackbar.LENGTH_INDEFINITE)
-            snackBar.duration = msg.length * (1000 / 4)
-            snackBar.setAction("Dismiss") {
+            snackBar.duration = min(msg.length * (1000 / 4), 4 * 1000)
+            snackBar.setAction("OK") {
                 snackBar.dismiss()
             }
             snackBar.show()
@@ -126,9 +130,9 @@ class LocationService {
                 val location = locationManager.getLastKnownLocation(provider)
                 if (location != null)
                     return Tasks.forResult(location)
-                this.showWarning("Location currently unavailable...", showWarning)
+                showWarning("Location currently unavailable...", showWarning)
             } else
-                this.showWarning("No location provider available?!", showWarning)
+                showWarning("No location provider available?!", showWarning)
             return null
         }
     }
@@ -155,7 +159,7 @@ class LocationService {
                 locationManager.requestLocationUpdates(provider, 0, 0.0f, lLs, looper)
                 true
             } else {
-                this.showWarning("No location provider available?!", true)
+                showWarning("Failed to register for location updates: No location provider available?!", true)
                 false
             }
         }
@@ -179,17 +183,10 @@ class LocationService {
                 locationManager.removeUpdates(lLs)
                 true
             } else {
-                this.showWarning("No location provider available?!", true)
+                showWarning("Failed to unregister for location updates: No location provider available?!", true)
                 false
             }
         }
-    }
-
-    private fun showWarning(msg: String, showWarning: Boolean) {
-        log.i(msg)
-        if(!showWarning)
-            return
-        showSnack(msg)
     }
 
     fun hasLocationPermissions(requirePrecise: Boolean = false, showWarning: Boolean = true): Boolean {
@@ -197,7 +194,7 @@ class LocationService {
             (!requirePrecise && ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
             true
         } else {
-            this.showWarning("A permission for location is or was missing. The requested function is may not available.", showWarning)
+            showWarning("A permission for location is or was missing. The requested function is may not available.", showWarning)
             false
         }
     }
@@ -248,6 +245,6 @@ class LocationService {
             val alert = builder.create()
             alert.show()
         } else
-            this.showWarning("A permission for location is missing. The requested function is may not available.", true)
+            showWarning("A permission for location is missing. The requested function is may not available.", true)
     }
 }
