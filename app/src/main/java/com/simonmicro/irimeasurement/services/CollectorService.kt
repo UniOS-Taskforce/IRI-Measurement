@@ -39,7 +39,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     private lateinit var sensorManager: SensorManager
     private var requestStop: Boolean = false
     private var locService: LocationService? = null
-    private var wakelock: PowerManager.WakeLock? = null
+    private var wakelockScreen: PowerManager.WakeLock? = null
+    private var wakelockCPU: PowerManager.WakeLock? = null
     var collection: Collection? = null
 
     private var accelSensor: Sensor? = null
@@ -120,7 +121,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         if(!this.locService!!.startLocationUpdates(this.applicationContext.mainLooper, this.locCallback, this))
             this.log.w("Failed to register for location updates - still using query based solution...")
         // Get wakelock
-        this.wakelock = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector")
+        this.wakelockScreen = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector_screen")
+        this.wakelockCPU = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector_cpu")
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
@@ -200,12 +202,18 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
                 this.log.e("Failed to query location: ${it.stackTraceToString()}")
             }
 
-        // Refresh the wakelock
+        // Refresh the wakelocks
         try {
-            if (!this.wakelock!!.isHeld)
-                this.wakelock!!.acquire(10 * 1000) // Auto-expire in 10 seconds
+            if (this.wakelockScreen != null && !this.wakelockScreen!!.isHeld)
+                this.wakelockScreen!!.acquire(10 * 1000) // Auto-expire in 10 seconds
         } catch (e: Exception) {
-            this.log.w("Failed to acquire the wake-lock: ${e.stackTraceToString()}")
+            this.log.w("Failed to acquire the screen wake-lock: ${e.stackTraceToString()}")
+        }
+        try {
+            if (this.wakelockCPU != null && !this.wakelockCPU!!.isHeld)
+                this.wakelockCPU!!.acquire(10 * 1000) // Auto-expire in 10 seconds
+        } catch (e: Exception) {
+            this.log.w("Failed to acquire the cpu wake-lock: ${e.stackTraceToString()}")
         }
 
         return !done
@@ -233,8 +241,10 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.collection!!.completed(LocationService.getLocationTags())
         if(!this.locService!!.stopLocationUpdates(this.locCallback, this))
             this.log.w("Failed to unregister from location updates - did we ever subscribe successfully?")
-        if(this.wakelock!!.isHeld)
-            this.wakelock!!.release()
+        if(this.wakelockScreen != null && this.wakelockScreen!!.isHeld)
+            this.wakelockScreen!!.release()
+        if(this.wakelockCPU != null && this.wakelockCPU!!.isHeld)
+            this.wakelockCPU!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
     }

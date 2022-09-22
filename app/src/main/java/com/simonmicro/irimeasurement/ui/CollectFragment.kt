@@ -6,6 +6,8 @@ import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -48,6 +50,7 @@ class CollectFragment : Fragment() {
     private var done: Boolean = false
 
     companion object {
+        private var window: Window? = null
         private var instance: CollectFragment? = null
         private var asyncIsQueued: Boolean = false
 
@@ -84,6 +87,15 @@ class CollectFragment : Fragment() {
             else if(state == WorkInfo.State.RUNNING) {
                 this.serviceStatus?.text = "Running..."
                 isRunning = true
+            }
+            try {
+                // Enable screen wake during collection
+                if (state == WorkInfo.State.RUNNING)
+                    window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                else
+                    window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } catch(e: Exception) {
+                this.log.w("Failed to set FLAG_KEEP_SCREEN_ON: ${e.stackTraceToString()}")
             }
             // Update text color
             if(state == WorkInfo.State.FAILED)

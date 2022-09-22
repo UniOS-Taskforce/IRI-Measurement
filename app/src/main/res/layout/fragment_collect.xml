@@ -289,6 +289,6 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Please keep this activity active, until you have completed your collection. Otherwise sometimes sensor data gets lost. You may lock your device, but do not close this application or send it to the background.\nIt is also recommended to enable all additional location accuracy providers available." />
+            android:text="Please keep this activity active, until you have completed your collection - otherwise sensor data gets lost! This means, you may not lock your device, not close this application and not send it to the background. It is also recommended to enable all additional location accuracy providers available and to turn off battery optimizations for this application." />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
