@@ -278,16 +278,17 @@ class AnalyzeFragment : Fragment() {
 
     fun resetZoom(respectUserLocation: Boolean, animated: Boolean) {
         val border = 100
+        val zoom = 0.02f
         var north = 0.0
         var east = 0.0
         var south = 0.0
         var west = 0.0
         // Init either with users location or a point
         if(respectUserLocation) {
-            north = (this.userMarker?.position?.latitude ?: 0.0)
-            east = (this.userMarker?.position?.longitude ?: 0.0)
-            south = (this.userMarker?.position?.latitude ?: 0.0)
-            west = (this.userMarker?.position?.longitude ?: 0.0)
+            north = (this.userMarker?.position?.latitude ?: 0.0) + zoom
+            east = (this.userMarker?.position?.longitude ?: 0.0) + zoom
+            south = (this.userMarker?.position?.latitude ?: 0.0) - zoom
+            west = (this.userMarker?.position?.longitude ?: 0.0) - zoom
         } else if(this.otherMarkers.size > 0) {
             north = this.otherMarkers[0].latitude
             east = this.otherMarkers[0].longitude
