@@ -1,10 +1,13 @@
 package com.simonmicro.irimeasurement.services
 
+import android.content.Context
+import android.location.Geocoder
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.services.points.*
 import java.lang.Double.max
 import java.lang.Double.min
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.cos
@@ -18,26 +21,22 @@ class IRICalculationService {
         var accelerometer: List<AccelerometerPoint>,
         var location: List<LocationPoint>
     ) { }
+    private val context: Context
     private val collection: Collection
     private var collectionData: CollectionData
-    enum class SectionEnd {
-        DUMMY,
-        TODO
-    }
     inner class Segment {
         private var svc: IRICalculationService
         var start: Date
         var end: Date
         var locations: List<EstimatedLocationPoint>
-        var endReason: SectionEnd
 
-        constructor(svc: IRICalculationService, locations: List<EstimatedLocationPoint>, endReason: SectionEnd) {
-            assert(locations.isNotEmpty()) { "Every segment must have at least one location!" }
+        constructor(svc: IRICalculationService, locations: List<EstimatedLocationPoint>) {
             this.svc = svc
             this.locations = locations
-            this.endReason = endReason
+            assert(this.locations.size > 1) { "Every segment must have at least two locations!" }
             this.start = Date(this.locations[0].time)
             this.end = Date(this.locations[this.locations.size - 1].time)
+            //assert(this.start != this.end) { "Every segment must not start and end at the same location!" } // This is possible, if the user shook the phone and the location was not updated (yet)
         }
 
         override fun toString(): String {
@@ -47,7 +46,8 @@ class IRICalculationService {
         }
     }
 
-    constructor(collection: Collection) {
+    constructor(collection: Collection, context: Context) {
+        this.context = context // Used for Geocoder
         this.collection = collection
         // Load accelerometer data
         var start: Date? = null
@@ -88,26 +88,21 @@ class IRICalculationService {
      * This function tries to interpolate the location of the user around
      * the time in question.
      */
-    fun getLocation(date: Date): EstimatedLocationPoint {
+    private fun getLocation(date: Date): EstimatedLocationPoint {
         val time: Long = date.time
         // Find the from and to locations to interpolate between
         var from: LocationPoint? = null
         var to: LocationPoint? = null
-        for(loc in this.collectionData.location) {
-            if(from == null) {
-                if(time <= loc.time)
-                    from = loc
+        for(locId in this.collectionData.location.indices) {
+            var loc = this.collectionData.location[locId]
+            if(loc.time >= time) {
+                to = loc
+                if(locId > 0)
+                    from = this.collectionData.location[locId - 1]
                 else
-                    continue
-            }
-            if(from != null && to == null) {
-                if(loc.time >= time)
-                    to = loc
-                else
-                    continue
-            }
-            if(from != null && to != null)
+                    from = to
                 break
+            }
         }
         var back: LocationPoint = this.collectionData.location[this.collectionData.location.size - 1]
         if(from == null && to == null && time > back.time) {
@@ -116,9 +111,9 @@ class IRICalculationService {
             to = back
         }
         if(from == null) {
-            this.log.w("Wanted: " + time.toString())
-            this.log.w("Has from: " + from.toString())
-            this.log.w("Has to: " + to.toString())
+            this.log.w("Wanted: $time")
+            this.log.w("Has from: $from")
+            this.log.w("Has to: $to")
             this.log.w("Has from (really): " + this.collectionData.location[0].time.toString())
             this.log.w("Has to (really): " + this.collectionData.location[this.collectionData.location.size - 1].time.toString())
             throw RuntimeException("Failed to find from-location!")
@@ -126,7 +121,8 @@ class IRICalculationService {
         if(to == null)
             throw RuntimeException("Failed to find to-location!")
         var moveDuration: Long = to.time - from.time // In ms
-        if(moveDuration == 0L)
+        var movePercent: Double = min(1.0, (time - from.time).toDouble() / moveDuration.toDouble())
+        if(moveDuration == 0L || movePercent == 0.0 || movePercent == 1.0)
             // Okay, in zero ms nobody moves anywhere. Just return the original position
             return EstimatedLocationPoint(
                 from, null,
@@ -140,7 +136,6 @@ class IRICalculationService {
                 from.dirSpeed,
                 from.queried
             )
-        var movePercent: Double = (time - from.time).toDouble() / moveDuration.toDouble()
         return EstimatedLocationPoint(
             from, to,
             this.slide(from.locHeight, to.locHeight, movePercent),
@@ -160,45 +155,110 @@ class IRICalculationService {
      * timepoints, on with e.g. the road changed, direction rapidly changed
      * or the user stood still for a while.
      */
-    fun getSectionRecommendations(): List<Segment> {
-        // TODO - for now every location change will trigger a new "section"
-        var sections: ArrayList<Segment> = ArrayList()
-        var last: EstimatedLocationPoint? = null
-        for(cDL in this.collectionData.location) {
-            if(last == null || last != cDL) {
-                var now = EstimatedLocationPoint(cDL)
-                if(last != null)
-                    sections.add(Segment(this, arrayListOf(last, now), SectionEnd.TODO))
-                last = now
-            }
+    fun getSectionRecommendations(progressNotification: (description: String, percent: Double) -> Unit): List<Segment> {
+        var sectionTimes = ArrayList<Date>()
+        // Search all times were acceleration differs greater than variance from average
+        var accelAvg: Double = 0.0
+        for(accel in this.collectionData.accelerometer)
+            accelAvg += accel.accelX + accel.accelY + accel.accelZ
+        accelAvg /= this.collectionData.accelerometer.size
+        var accelVar: Double = 0.0
+        for(accel in this.collectionData.accelerometer) {
+            var p: Double = ((accel.accelX + accel.accelY + accel.accelZ) - accelAvg)
+            var q: Double = p * p
+            accelVar += q
         }
-        // Insert start and end dummy section if necessary
-        if(sections.size == 0)
-            sections.add(Segment(this, arrayListOf(this.getLocation(this.collectionData.start), this.getLocation(this.collectionData.end)), SectionEnd.DUMMY))
+        assert(this.collectionData.accelerometer.size > 1) { "For the variance calculation we need at least two points (otherwise divide by zero)!" }
+        accelVar /= this.collectionData.accelerometer.size - 1
+        this.log.d("Accelerometer average $accelAvg with variance of $accelVar")
+        for(accelId in this.collectionData.accelerometer.indices) {
+            var accel = this.collectionData.accelerometer[accelId]
+            var p: Double = (accel.accelX + accel.accelY + accel.accelZ).toDouble()
+            progressNotification("Acceleration", accelId / this.collectionData.accelerometer.size.toDouble())
+            if(accelAvg + accelVar > p && accelAvg - accelVar < p)
+                continue
+            sectionTimes.add(Date(accel.time))
+            this.log.d("Accelerometer triggered new section at ${accel.time} with $p")
+        }
+        // Use Geocoder to trigger new segments on roads
+        if(Geocoder.isPresent()) {
+            var geocoder = Geocoder(this.context)
+            var currentAddressLine = ""
+            for (locationId in this.collectionData.location.indices) {
+                var location = this.collectionData.location[locationId]
+                var addresses = geocoder.getFromLocation(location.locLat, location.locLon, 1)
+                if(addresses != null && addresses.isNotEmpty()) {
+                    var address = addresses[0]
+                    if(address.maxAddressLineIndex >= 0) {
+                        var line = address.getAddressLine(0)
+                        // Every address is more or less like this: "Sutthauser Str. 52, 49124 Georgsmarienhütte, Germany"
+                        // I think everything is relevant - except the house number -> e.g. if the street changes we want to know that!
+                        var simpleLine = line.replace(Regex("(.+)(\\s\\d+)(,\\s\\d+)"), "$1$3")
+                        if(simpleLine != currentAddressLine) {
+                            this.log.d("Next location is at \"$simpleLine\" (from \"$line\") at ${location.time}")
+                            sectionTimes.add(Date(location.time))
+                            currentAddressLine = simpleLine
+                        }
+                    }
+                }
+                progressNotification("Geocoding", locationId / this.collectionData.location.size.toDouble())
+            }
+        } else
+            this.log.w("Geocoder is not available!")
+        sectionTimes = ArrayList(sectionTimes.sorted())
+
+        // Now assemble the segments, based on the segmentTimes and available data
+        var sections = ArrayList<Segment>()
+        var locationsForNextSegment = ArrayList<EstimatedLocationPoint>()
+        locationsForNextSegment.add(this.getLocation(this.collectionData.start)) // For the very start!
+        for(location in this.collectionData.location) {
+            while(sectionTimes.isNotEmpty() && sectionTimes[0] < Date(location.time)) {
+                // Next segment time is smaller than the location -> create new segment
+                var thisLoc = this.getLocation(sectionTimes[0])
+                sectionTimes.removeAt(0)
+                locationsForNextSegment.add(thisLoc)
+                if(this.getEstimatedLocationDistance(locationsForNextSegment) > 16) { // Only add segments, which are greater than 16m
+                    sections.add(Segment(this, locationsForNextSegment))
+                    locationsForNextSegment = ArrayList() // Do not clear, as the segment would then be too...
+                    locationsForNextSegment.add(thisLoc)
+                }
+            }
+            locationsForNextSegment.add(EstimatedLocationPoint(location))
+        }
+        if(locationsForNextSegment.size > 1) {
+            locationsForNextSegment.add(this.getLocation(this.collectionData.end)) // For the very end!
+            sections.add(Segment(this, locationsForNextSegment))
+            locationsForNextSegment = ArrayList()
+        } else
+            locationsForNextSegment = ArrayList()
+        assert(locationsForNextSegment.isEmpty()) { "We must not forget the last segment locations!" }
         return sections
     }
 
-    private val earthR: Double = (6371 * 1000).toDouble()
+    private val earthR: Double = (6371 * 1000).toDouble() // Earth radius in m
     private fun locationToXYZ(location: LocationPoint): DoubleArray {
         var lat = location.locLat
         var lon = location.locLon
-        var r = earthR
+        var r = earthR + location.locHeight // in m
         lat = Math.toRadians(lat)
         lon = Math.toRadians(lon)
         val x: Double = r * cos(lat) * cos(lon)
         val y: Double = r * cos(lat) * sin(lon)
         val z: Double = r * sin(lat)
-        return doubleArrayOf(x, y, z)
+        return doubleArrayOf(x, y, z) // In m
     }
 
     fun getLocationDistance(from: LocationPoint, to: LocationPoint): Double {
+        if(from == to)
+            return 0.0
         var fromXYZ: DoubleArray = this.locationToXYZ(from)
         var toXYZ: DoubleArray = this.locationToXYZ(to)
+        if(fromXYZ[0] == toXYZ[0] && fromXYZ[1] == toXYZ[1] && fromXYZ[2] == toXYZ[2])
+            return 0.0
         var frac: Double = (fromXYZ[0] * toXYZ[0] + fromXYZ[1] * toXYZ[1] + fromXYZ[2] * toXYZ[2]) / ((earthR + from.locHeight) * (earthR + to.locHeight))
         frac = min(frac, 1.0) // In rare rounding cases the distance my be greater than 1, which is impossible
         var alpha: Double = acos(frac)
-        var b: Double = alpha * earthR
-        return b
+        return alpha * earthR // in m
     }
 
     fun getEstimatedLocationDistance(locations: List<EstimatedLocationPoint>): Double {

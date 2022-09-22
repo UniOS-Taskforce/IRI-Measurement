@@ -21,7 +21,18 @@ class EstimatedLocationPoint(var from: LocationPoint, var to: LocationPoint?,
     dir,
     dirSpeed,
     queried,
-    time) { }
+    time) {
+    fun wasEstimated(): Boolean {
+        return this.to != null
+    }
+
+    override fun toString(): String {
+        var s = super.toString()
+        if(this.wasEstimated())
+            s = "e$s" // Add "e" to indicate it was estimated
+        return s
+    }
+}
 
 fun EstimatedLocationPoint(loc: LocationPoint) = EstimatedLocationPoint(
     loc, null,

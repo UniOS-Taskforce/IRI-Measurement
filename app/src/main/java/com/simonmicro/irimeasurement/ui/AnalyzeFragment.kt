@@ -16,6 +16,7 @@ import com.simonmicro.irimeasurement.*
 import com.simonmicro.irimeasurement.services.StorageService
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.services.IRICalculationService
+import com.simonmicro.irimeasurement.services.points.LocationPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -25,6 +26,7 @@ import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polyline
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -109,15 +111,19 @@ class AnalyzeFragment : Fragment() {
         val that = this
         if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
             // Oh, we already got all permissions? So, let's display the users location live on the map!
+            var lastUserLocation: Location? = null
             this.done = false
             val handler = Handler()
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
                     if(that.done) return
                     HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
-                        log.d("Pushing current location to map: $it")
-                        if(it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
-                            that.showUserLocation(it.latitude, it.longitude)
+                        if(lastUserLocation == null || lastUserLocation != it) {
+                            log.d("Pushing current location to map: $it")
+                            if (it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
+                                that.showUserLocation(it.latitude, it.longitude)
+                            lastUserLocation = it
+                        }
                     }?.addOnFailureListener {
                         log.e("Failed to push current position to map: ${it.stackTraceToString()}")
                     }
@@ -214,17 +220,39 @@ class AnalyzeFragment : Fragment() {
             this.userMarker = Marker(map)
             this.userMarker!!.icon = resources.getDrawable(org.osmdroid.library.R.drawable.person)
             this.userMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            this.userMarker!!.title = "Your are here!"
             map!!.overlays.add(this.userMarker)
         }
         this.userMarker!!.position = GeoPoint(lat, lon)
         map!!.invalidate() // This forces the point to be visible NOW
     }
 
-    fun addMarker(lat: Double, lon: Double) {
+    fun addSegmentMarker(location: LocationPoint) {
         val m = Marker(map)
-        m.position = GeoPoint(lat, lon)
+        m.position = GeoPoint(location.locLat, location.locLon)
+        m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map!!.overlays.add(m)
+        map!!.invalidate() // This forces the points to be visible NOW
+    }
+
+    fun addIntermediateMarker(location: LocationPoint) {
+        val m = Marker(map)
+        m.position = GeoPoint(location.locLat, location.locLon)
+        m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default_focused_base)
+        m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        map!!.overlays.add(m)
+    }
+
+    fun addLineMarker(locations: List<LocationPoint>, title: String?) {
+        var points = ArrayList<GeoPoint>()
+        for(location in locations)
+            points.add(GeoPoint(location.locLat, location.locLon))
+        var line = Polyline(map)
+        line.setPoints(points)
+        if(title != null)
+            line.title = title
+        map!!.overlays.add(line)
         map!!.invalidate() // This forces the points to be visible NOW
     }
 
@@ -233,5 +261,9 @@ class AnalyzeFragment : Fragment() {
             it != this.userMarker // Clear all except our user markers
         }
         map!!.invalidate() // This forces the points to be removed NOW
+    }
+
+    fun resetZoom() {
+        // TODO calc bounding box and apply zoom
     }
 }

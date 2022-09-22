@@ -13,64 +13,87 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
     private var aStatus = AnalyzeFragment.AnalyzeStatus(false)
     private var expectedKillString = "Active analysis thread reference changed - terminating this instance!"
 
-    private fun pushViewUpdate() {
+    private var onUpdate = false
+    private fun pushViewUpdate(force: Boolean) {
         if(this.fragment.activeAnalysisThread != this)
             // Okay, an other analysis thread was started! We terminate now by throwing an Exception!
             throw Exception(expectedKillString)
+        if(this.onUpdate && !force)
+            // We are still waiting for one update to finish...
+            return
         var that = this
-        CoroutineScope(Dispatchers.Main).launch { that.fragment.updateAnalyzeStatus(view, aStatus) }
+        this.onUpdate = true
+        CoroutineScope(Dispatchers.Main).launch {
+            that.fragment.updateAnalyzeStatus(view, aStatus)
+            that.onUpdate = false
+        }
     }
 
     override fun run() {
         super.run()
         this.aStatus.working = true
         this.aStatus.workingText = "Starting analysis..."
-        this.pushViewUpdate()
+        this.pushViewUpdate(true)
         try {
+            this.fragment.clearMarkers() // Already clear the view
             this.aStatus.workingText = "Loading collection..."
-            this.pushViewUpdate()
+            this.pushViewUpdate(true)
             var c = Collection(this.collectionUUID)
             aStatus.resultText = c.toSnackbarString()
 
             // Analyze the data
             this.aStatus.workingText = "Parsing data..."
-            this.pushViewUpdate()
-            var iriSvc = IRICalculationService(c)
+            this.pushViewUpdate(true)
+            var iriSvc = IRICalculationService(c, this.fragment.requireContext())
 
             // Determine the collected segments
             this.aStatus.workingText = "Searching segments..."
-            this.pushViewUpdate()
-            var segments = iriSvc.getSectionRecommendations()
+            this.pushViewUpdate(true)
+            var progressCallback = {
+                description: String, percent: Double ->
+                this.aStatus.workingText = "Searching segments: $description..."
+                this.aStatus.workingProgress = (percent * 100).toInt()
+                this.pushViewUpdate(false)
+            }
+            var segments = iriSvc.getSectionRecommendations(progressCallback)
             this.aStatus.resultText += "\nSegments (overall): ${segments.size}"
-            this.pushViewUpdate()
+            this.pushViewUpdate(true)
 
             // Add a point for every sections location
-            this.fragment.clearMarkers()
             this.aStatus.workingText = "Calculating IRI per segment..."
-            this.pushViewUpdate()
+            this.pushViewUpdate(true)
             var segmentsSkipped: Int = 0
             var segmentsProcessed: Int = 0
             var segmentsProcessedIRIAvg: Double = 0.0
+            var segmentsLocations: Int = 0
             for (i in segments.indices) {
                 var segment = segments[i]
-                // TODO Move markers into status / results
-                for(location in segment.locations)
-                    this.fragment.addMarker(location.locLat, location.locLon)
+                for(location in segment.locations) {
+                    if(!location.wasEstimated()) // Every real location will get a section marker!
+                        this.fragment.addSegmentMarker(location)
+                    else
+                        this.fragment.addIntermediateMarker(location)
+                    segmentsLocations += 1
+                }
                 try {
                     var iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
                     segmentsProcessed += 1
+                    this.fragment.addLineMarker(segment.locations, "IRI: $iri")
                     this.log.i("IRI of segment ${segment}: $iri")
                 } catch (e: Exception) {
                     segmentsSkipped += 1
-                    this.log.w("Skipped segment ($segmentsSkipped) ${segment}: ${e.message}")
+                    this.fragment.addLineMarker(segment.locations, e.message)
+                    this.log.w("Skipped segment ($segmentsSkipped) ${segment}: ${e.stackTraceToString()}")
                 }
                 this.aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()
-                this.pushViewUpdate()
+                this.pushViewUpdate(false)
             }
+            this.fragment.resetZoom()
             segmentsProcessedIRIAvg /= segmentsProcessed.toDouble()
             this.aStatus.resultText += "\nSegments (skipped): $segmentsSkipped"
             this.aStatus.resultText += "\nSegments (processed): $segmentsProcessed"
+            this.aStatus.resultText += "\nSegments locations: $segmentsLocations"
             this.aStatus.resultText += "\nSegments IRI (avg): $segmentsProcessedIRIAvg"
         } catch(e: Exception) {
             if(e.message == this.expectedKillString) {
@@ -82,6 +105,6 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             aStatus.resultText = "Failed to analyze the collection: ${e.message}"
         }
         this.aStatus.working = false
-        this.pushViewUpdate()
+        this.pushViewUpdate(true)
     }
 }
