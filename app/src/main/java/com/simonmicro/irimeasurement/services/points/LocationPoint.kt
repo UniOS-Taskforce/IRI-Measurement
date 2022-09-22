@@ -17,7 +17,7 @@ open class LocationPoint(var locHeight: Double, var locLon: Double, var locLat: 
     }
 
     override fun toString(): String {
-        return "(lon $locLon, lat $locLat, height $locHeight)"
+        return "(lat $locLat, lon $locLon, height $locHeight)"
     }
 }
 
