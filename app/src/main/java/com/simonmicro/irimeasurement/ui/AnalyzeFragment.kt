@@ -117,7 +117,7 @@ class AnalyzeFragment : Fragment() {
                     HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
                         log.d("Pushing current location to map: $it")
                         if(it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
-                            that.addMarker(it.latitude, it.longitude, true)
+                            that.showUserLocation(it.latitude, it.longitude)
                     }?.addOnFailureListener {
                         log.e("Failed to push current position to map: ${it.stackTraceToString()}")
                     }
@@ -207,13 +207,31 @@ class AnalyzeFragment : Fragment() {
         this.done = true
     }
 
-    fun addMarker(lat: Double, lon: Double, isPerson: Boolean): GeoPoint? {
-        val p = GeoPoint(lat, lon)
+    private var userMarker: Marker? = null
+    fun showUserLocation(lat: Double, lon: Double) {
+        // Clear previous user marker
+        if(userMarker == null) {
+            this.userMarker = Marker(map)
+            this.userMarker!!.icon = resources.getDrawable(org.osmdroid.library.R.drawable.person)
+            this.userMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            map!!.overlays.add(this.userMarker)
+        }
+        this.userMarker!!.position = GeoPoint(lat, lon)
+        map!!.invalidate() // This forces the point to be visible NOW
+    }
+
+    fun addMarker(lat: Double, lon: Double) {
         val m = Marker(map)
-        if (isPerson) m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.person)
-        m.position = p
+        m.position = GeoPoint(lat, lon)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map!!.overlays.add(m)
-        return p
+        map!!.invalidate() // This forces the points to be visible NOW
+    }
+
+    fun clearMarkers() {
+        map!!.overlays.removeAll {
+            it != this.userMarker // Clear all except our user markers
+        }
+        map!!.invalidate() // This forces the points to be removed NOW
     }
 }

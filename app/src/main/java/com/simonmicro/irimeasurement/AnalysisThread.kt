@@ -44,7 +44,8 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             this.aStatus.resultText += "\nSegments (overall): ${segments.size}"
             this.pushViewUpdate()
 
-            // Add a point for every section start and end
+            // Add a point for every sections location
+            this.fragment.clearMarkers()
             this.aStatus.workingText = "Calculating IRI per segment..."
             this.pushViewUpdate()
             var segmentsSkipped: Int = 0
@@ -52,11 +53,9 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             var segmentsProcessedIRIAvg: Double = 0.0
             for (i in segments.indices) {
                 var segment = segments[i]
-                var location = iriSvc.getLocation(segment.start)
                 // TODO Move markers into status / results
-                this.fragment.addMarker(location.locLat, location.locLon, false)
-                location = iriSvc.getLocation(segment.end)
-                this.fragment.addMarker(location.locLat, location.locLon, false)
+                for(location in segment.locations)
+                    this.fragment.addMarker(location.locLat, location.locLon)
                 try {
                     var iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
