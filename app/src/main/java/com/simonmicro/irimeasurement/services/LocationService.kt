@@ -43,7 +43,9 @@ class LocationService(private val context: Context) {
             val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity)
             if(googlePlayStatus != ConnectionResult.SUCCESS) {
                 this.nativeManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-                this.nativeProvider = this.nativeManager!!.getBestProvider(Criteria(), true)
+                var c = Criteria()
+                c.isCostAllowed = true // At all costs ;)
+                this.nativeProvider = this.nativeManager!!.getBestProvider(c, true)
                 if (this.nativeProvider != null)
                     locationTags.add(this.nativeProvider!!)
                 locationTags.add("native")
