@@ -101,11 +101,11 @@
                 android:checked="true"
                 android:text="Show estimated locations" />
 
-            <TextView
+            <Button
+                android:id="@+id/triggerAnalysisNow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textStyle="italic"
-                android:text="Please rerun the analysis to apply your changes." />
+                android:text="Apply changes" />
         </LinearLayout>
 
     </LinearLayout>

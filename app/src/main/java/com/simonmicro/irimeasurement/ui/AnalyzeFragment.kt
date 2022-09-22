@@ -1,6 +1,8 @@
 package com.simonmicro.irimeasurement.ui
 
 import android.animation.ValueAnimator
+import android.graphics.Color
+import android.graphics.Paint
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
@@ -156,8 +158,7 @@ class AnalyzeFragment : Fragment() {
                 position: Int,
                 id: Long
             ) {
-                that.activeAnalysisThread = AnalysisThread(view, that, UUID.fromString(collectionOptions[position]))
-                that.activeAnalysisThread!!.start()
+                that.startAnalysis(UUID.fromString(collectionOptions[position]))
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
@@ -167,7 +168,21 @@ class AnalyzeFragment : Fragment() {
         this.initAnalyzeProperties()
         this.updateAnalyzeStatus(view, AnalyzeStatus(false))
 
+        view.findViewById<Button>(R.id.triggerAnalysisNow).setOnClickListener {
+            that.startAnalysis(null) // Hope, that is was executed before - so the UUID would be reusable
+        }
+
         return view
+    }
+
+    private var lastAnalysisUUID: UUID? = null
+    fun startAnalysis(uuid: UUID?) {
+        val now: UUID? = uuid?: this.lastAnalysisUUID
+        if(now != null) {
+            this.activeAnalysisThread = AnalysisThread(requireView(), this, now)
+            this.activeAnalysisThread!!.start()
+            lastAnalysisUUID = uuid
+        }
     }
 
     override fun onResume() {
@@ -233,6 +248,8 @@ class AnalyzeFragment : Fragment() {
         map.overlays.add(m)
     }
 
+    private var lineColors = arrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.GRAY)
+    private var lineColorsIndex: Int = 0
     fun addLineMarker(locations: List<LocationPoint>, title: String?) {
         var points = ArrayList<GeoPoint>()
         for(location in locations)
@@ -242,6 +259,10 @@ class AnalyzeFragment : Fragment() {
         line.setPoints(points)
         if(title != null)
             line.title = title
+        line.color = lineColors[lineColorsIndex]
+        lineColorsIndex += 1
+        if(lineColorsIndex >= lineColors.size)
+            lineColorsIndex = 0
         map.overlays.add(line)
         map.invalidate() // This forces the points to be visible NOW
     }
