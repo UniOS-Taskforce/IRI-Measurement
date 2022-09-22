@@ -131,7 +131,7 @@ class AnalyzeFragment : Fragment() {
                             if (it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
                                 that.showUserLocation(it.latitude, it.longitude)
                             if(lastUserLocation == null) // Only first time: Reset zoom
-                                that.resetZoom(false)
+                                that.resetZoom(respectUserLocation = true, animated = false)
                             lastUserLocation = it
                         }
                     }?.addOnFailureListener {
@@ -181,8 +181,9 @@ class AnalyzeFragment : Fragment() {
         if(now != null) {
             this.activeAnalysisThread = AnalysisThread(requireView(), this, now)
             this.activeAnalysisThread!!.start()
-            lastAnalysisUUID = uuid
-        }
+            lastAnalysisUUID = now
+        } else
+            this.log.w("Can't restart analysis, as no UUID is set.")
     }
 
     override fun onResume() {
@@ -248,7 +249,7 @@ class AnalyzeFragment : Fragment() {
         map.overlays.add(m)
     }
 
-    private var lineColors = arrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.GRAY)
+    private var lineColors = arrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.DKGRAY)
     private var lineColorsIndex: Int = 0
     fun addLineMarker(locations: List<LocationPoint>, title: String?) {
         var points = ArrayList<GeoPoint>()
@@ -275,12 +276,25 @@ class AnalyzeFragment : Fragment() {
         map.invalidate() // This forces the points to be removed NOW
     }
 
-    fun resetZoom(animated: Boolean = true) {
+    fun resetZoom(respectUserLocation: Boolean, animated: Boolean) {
         val border = 100
-        var north: Double = (this.userMarker?.position?.latitude ?: 0.0)
-        var east: Double = (this.userMarker?.position?.longitude ?: 0.0)
-        var south: Double = (this.userMarker?.position?.latitude ?: 0.0)
-        var west: Double = (this.userMarker?.position?.longitude ?: 0.0)
+        var north = 0.0
+        var east = 0.0
+        var south = 0.0
+        var west = 0.0
+        // Init either with users location or a point
+        if(respectUserLocation) {
+            north = (this.userMarker?.position?.latitude ?: 0.0)
+            east = (this.userMarker?.position?.longitude ?: 0.0)
+            south = (this.userMarker?.position?.latitude ?: 0.0)
+            west = (this.userMarker?.position?.longitude ?: 0.0)
+        } else if(this.otherMarkers.size > 0) {
+            north = this.otherMarkers[0].latitude
+            east = this.otherMarkers[0].longitude
+            south = this.otherMarkers[0].latitude
+            west = this.otherMarkers[0].longitude
+        }
+        // Respect all points
         for(point in this.otherMarkers) {
             north = max(north, point.latitude)
             east = max(east, point.longitude)
@@ -293,6 +307,7 @@ class AnalyzeFragment : Fragment() {
             south,
             west
         )
+        // Queue update of the map
         CoroutineScope(Dispatchers.Main).launch {
             // In case the map was not rendered yet...
             map.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
