@@ -79,8 +79,9 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                     var iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
                     segmentsProcessed += 1
-                    this.fragment.addLineMarker(segment.locations, "IRI: $iri")
-                    this.log.i("IRI of segment ${segment}: $iri")
+                    var iriStr = (Math.round(iri * 1000).toDouble() / 1000).toString()
+                    this.fragment.addLineMarker(segment.locations, "IRI: $iriStr")
+                    this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
                 } catch (e: Exception) {
                     segmentsSkipped += 1
                     this.fragment.addLineMarker(segment.locations, e.message)

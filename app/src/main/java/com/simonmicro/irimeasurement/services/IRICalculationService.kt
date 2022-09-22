@@ -42,7 +42,7 @@ class IRICalculationService {
         override fun toString(): String {
             var from: EstimatedLocationPoint = this.locations[0]
             var to: EstimatedLocationPoint = this.locations[this.locations.size - 1]
-            return "Segment ${from.time} to ${to.time} from $from to $to"
+            return "Segment of ${this.locations.size} locations, from ${from.time} to ${to.time}, from $from to $to"
         }
     }
 
@@ -124,18 +124,7 @@ class IRICalculationService {
         var movePercent: Double = min(1.0, (time - from.time).toDouble() / moveDuration.toDouble())
         if(moveDuration == 0L || movePercent == 0.0 || movePercent == 1.0)
             // Okay, in zero ms nobody moves anywhere. Just return the original position
-            return EstimatedLocationPoint(
-                from, null,
-                from.locHeight,
-                from.locLon,
-                from.locLat,
-                from.accuDir,
-                from.accuHeight,
-                from.accuLonLat,
-                from.dir,
-                from.dirSpeed,
-                from.queried
-            )
+            return EstimatedLocationPoint(from)
         return EstimatedLocationPoint(
             from, to,
             this.slide(from.locHeight, to.locHeight, movePercent),
@@ -146,7 +135,8 @@ class IRICalculationService {
             this.slide(from.accuLonLat, to.accuLonLat, movePercent),
             this.slide(from.dir, to.dir, movePercent),
             this.slide(from.dirSpeed, to.dirSpeed, movePercent),
-            false
+            false,
+            this.slide(from.time.toDouble(), to.time.toDouble(), movePercent).toLong()
         )
     }
 
@@ -248,7 +238,7 @@ class IRICalculationService {
         return doubleArrayOf(x, y, z) // In m
     }
 
-    fun getLocationDistance(from: LocationPoint, to: LocationPoint): Double {
+    private fun getLocationDistance(from: LocationPoint, to: LocationPoint): Double {
         if(from == to)
             return 0.0
         var fromXYZ: DoubleArray = this.locationToXYZ(from)
@@ -261,9 +251,14 @@ class IRICalculationService {
         return alpha * earthR // in m
     }
 
-    fun getEstimatedLocationDistance(locations: List<EstimatedLocationPoint>): Double {
-        // TODO Calc the distance over the intersecting points, not just from start to end
-        return this.getLocationDistance(locations[0], locations[locations.size - 1])
+    private fun getEstimatedLocationDistance(locations: List<EstimatedLocationPoint>): Double {
+        var dist: Double = 0.0
+        for(locId in 1 until locations.size) {
+            var from = locations[locId - 1]
+            var to = locations[locId]
+            dist += this.getLocationDistance(from, to)
+        }
+        return dist
     }
 
     /**
@@ -273,7 +268,7 @@ class IRICalculationService {
      * them for optimal results.
      */
     fun getIRIValue(segment: Segment): Double {
-        var dist: Double = this.getEstimatedLocationDistance(segment.locations)
+        val dist: Double = this.getEstimatedLocationDistance(segment.locations)
         if(dist <= 0.0)
             throw RuntimeException("The sections start and end are the same point (no distance!)")
         var sum: Double = 0.0 // The part over the fraction
