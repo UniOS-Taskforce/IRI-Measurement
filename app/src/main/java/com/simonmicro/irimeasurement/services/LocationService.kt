@@ -13,6 +13,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Looper
 import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -26,22 +27,27 @@ import com.google.android.gms.tasks.Tasks
 import com.google.android.material.snackbar.Snackbar
 import java.lang.Math.min
 
-class LocationService {
+class LocationService(private val context: Context) {
     private val REQUEST_PERMISSIONS_REQUEST_CODE = 1
-    private val context: Context
 
     companion object {
         private val log = com.simonmicro.irimeasurement.util.Log(LocationService::class.java.name)
         private lateinit var snackbarTarget: View
         private var fusedLocationClient: FusedLocationProviderClient? = null
+        private var nativeManager: LocationManager? = null
+        private var nativeProvider: String? = null
         private var locationTags = ArrayList<String>()
 
         fun initialize(activity: AppCompatActivity, snackbarTarget: View) {
             this.snackbarTarget = snackbarTarget
             val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity)
             if(googlePlayStatus != ConnectionResult.SUCCESS) {
-                this.showWarning("Google Play Services are not available (${this.serviceStatusToString(googlePlayStatus)}). Using native Android providers instead...", true)
+                this.nativeManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                this.nativeProvider = this.nativeManager!!.getBestProvider(Criteria(), true)
+                if (this.nativeProvider != null)
+                    locationTags.add(this.nativeProvider!!)
                 locationTags.add("native")
+                this.showWarning("Google Play Services are not available (${this.serviceStatusToString(googlePlayStatus)}). Using native Android provider instead (${this.nativeProvider})...", true)
             } else {
                 val builder = LocationSettingsRequest.Builder()
 
@@ -85,6 +91,8 @@ class LocationService {
             snackBar.setAction("OK") {
                 snackBar.dismiss()
             }
+            val snackText: TextView = snackBar.view.findViewById(com.google.android.material.R.id.snackbar_text)
+            snackText.maxLines = 4
             snackBar.show()
         }
 
@@ -106,10 +114,6 @@ class LocationService {
         }
     }
 
-    constructor(context: Context) {
-        this.context = context
-    }
-
     @SuppressLint("MissingPermission")
     fun getUserLocation(showWarning: Boolean = true): Task<Location>? {
         if(!this.hasLocationPermissions())
@@ -124,10 +128,8 @@ class LocationService {
             return fusedLocationClient!!.lastLocation
         } else {
             // Get the current user position (if permission is granted)
-            val locationManager = this.context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val provider = locationManager.getBestProvider(Criteria(), true)
-            if (provider != null) {
-                val location = locationManager.getLastKnownLocation(provider)
+            if (nativeProvider != null) {
+                val location = nativeManager?.getLastKnownLocation(nativeProvider!!)
                 if (location != null)
                     return Tasks.forResult(location)
                 showWarning("Location currently unavailable...", showWarning)
@@ -153,10 +155,8 @@ class LocationService {
             } else
                 false
         } else {
-            val locationManager = this.context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val provider = locationManager.getBestProvider(Criteria(), true)
-            return if (provider != null) {
-                locationManager.requestLocationUpdates(provider, 0, 0.0f, lLs, looper)
+            return if (nativeProvider != null) {
+                nativeManager?.requestLocationUpdates(nativeProvider!!, 0, 0.0f, lLs, looper)
                 true
             } else {
                 showWarning("Failed to register for location updates: No location provider available?!", true)
@@ -177,10 +177,8 @@ class LocationService {
             } else
                 false
         } else {
-            val locationManager = this.context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-            val provider = locationManager.getBestProvider(Criteria(), true)
-            return if (provider != null) {
-                locationManager.removeUpdates(lLs)
+            return if (nativeProvider != null) {
+                nativeManager?.removeUpdates(lLs)
                 true
             } else {
                 showWarning("Failed to unregister for location updates: No location provider available?!", true)
