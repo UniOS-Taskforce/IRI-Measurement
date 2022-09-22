@@ -67,6 +67,8 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             var segmentsProcessedIRIAvg: Double = 0.0
             var segmentsLocations: Int = 0
             for (i in segments.indices) {
+                if(i % 100 == 0) // Reset the zoom every 100 segments...
+                    this.fragment.resetZoom()
                 var segment = segments[i]
                 for(location in segment.locations) {
                     if(!location.wasEstimated()) // Every real location will get a section marker!

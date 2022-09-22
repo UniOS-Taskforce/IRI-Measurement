@@ -195,25 +195,29 @@ class IRICalculationService {
             }
         } else
             this.log.w("Geocoder is not available!")
+
+        progressNotification("Sort", -1.0)
         sectionTimes = ArrayList(sectionTimes.sorted())
 
         // Now assemble the segments, based on the segmentTimes and available data
         var sections = ArrayList<Segment>()
         var locationsForNextSegment = ArrayList<EstimatedLocationPoint>()
         locationsForNextSegment.add(this.getLocation(this.collectionData.start)) // For the very start!
-        for(location in this.collectionData.location) {
+        for(locId in this.collectionData.location.indices) {
+            var location = this.collectionData.location[locId]
             while(sectionTimes.isNotEmpty() && sectionTimes[0] < Date(location.time)) {
                 // Next segment time is smaller than the location -> create new segment
                 var thisLoc = this.getLocation(sectionTimes[0])
                 sectionTimes.removeAt(0)
                 locationsForNextSegment.add(thisLoc)
-                if(this.getEstimatedLocationDistance(locationsForNextSegment) > 16) { // Only add segments, which are greater than 16m
+                if(this.getEstimatedLocationDistance(locationsForNextSegment) > 16) { // Only add segments, which are greater than 16 meters
                     sections.add(Segment(this, locationsForNextSegment))
                     locationsForNextSegment = ArrayList() // Do not clear, as the segment would then be too...
                     locationsForNextSegment.add(thisLoc)
                 }
             }
             locationsForNextSegment.add(EstimatedLocationPoint(location))
+            progressNotification("Assemble", locId / this.collectionData.location.size.toDouble())
         }
         if(locationsForNextSegment.size > 1) {
             locationsForNextSegment.add(this.getLocation(this.collectionData.end)) // For the very end!
