@@ -19,8 +19,8 @@ android {
         applicationId "com.simonmicro.irimeasurement"
         minSdk 27
         targetSdk 33
-        versionCode 12
-        versionName "1.5.1-${getGitHash()}"
+        versionCode 13
+        versionName "1.5.2-${getGitHash()}"
     }
 
     buildTypes {
