@@ -27,6 +27,8 @@ import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
+import java.lang.Double.max
+import java.lang.Double.min
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -122,6 +124,8 @@ class AnalyzeFragment : Fragment() {
                             log.d("Pushing current location to map: $it")
                             if (it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
                                 that.showUserLocation(it.latitude, it.longitude)
+                            if(lastUserLocation == null) // Only first time: Reset zoom
+                                that.resetZoom(false)
                             lastUserLocation = it
                         }
                     }?.addOnFailureListener {
@@ -131,30 +135,6 @@ class AnalyzeFragment : Fragment() {
                 }
             }
             handler.post(runnableCode)
-
-            // Zoom into the map initially...
-            HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
-                this.log.d("Resetting zoom for location $it...")
-                val zoom: Float = 0.02f
-                if(it != null) {
-                    val boundingBox = BoundingBox(
-                        it.latitude + zoom,
-                        it.longitude + zoom,
-                        it.latitude - zoom,
-                        it.longitude - zoom
-                    )
-                    // In case the map was not rendered yet...
-                    map!!.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
-                        map!!.zoomToBoundingBox(boundingBox, false, 100)
-                        map!!.invalidate()
-                    }
-                    // In case the map is already visible...
-                    map!!.zoomToBoundingBox(boundingBox, false, 100)
-                    map!!.invalidate()
-                }
-            }?.addOnFailureListener {
-                this.log.e("Failed to set zoom on map: ${it.stackTraceToString()}")
-            }
         }
 
         analyzeNoCollection = view.findViewById(R.id.analyzeNoCollection)
@@ -227,9 +207,11 @@ class AnalyzeFragment : Fragment() {
         map!!.invalidate() // This forces the point to be visible NOW
     }
 
+    private var otherMarkers = ArrayList<GeoPoint>()
     fun addSegmentMarker(location: LocationPoint) {
         val m = Marker(map)
         m.position = GeoPoint(location.locLat, location.locLon)
+        otherMarkers.add(m.position)
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map!!.overlays.add(m)
@@ -239,6 +221,7 @@ class AnalyzeFragment : Fragment() {
     fun addIntermediateMarker(location: LocationPoint) {
         val m = Marker(map)
         m.position = GeoPoint(location.locLat, location.locLon)
+        otherMarkers.add(m.position)
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default_focused_base)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map!!.overlays.add(m)
@@ -248,6 +231,7 @@ class AnalyzeFragment : Fragment() {
         var points = ArrayList<GeoPoint>()
         for(location in locations)
             points.add(GeoPoint(location.locLat, location.locLon))
+        otherMarkers.addAll(points)
         var line = Polyline(map)
         line.setPoints(points)
         if(title != null)
@@ -260,10 +244,37 @@ class AnalyzeFragment : Fragment() {
         map!!.overlays.removeAll {
             it != this.userMarker // Clear all except our user markers
         }
+        otherMarkers.clear()
         map!!.invalidate() // This forces the points to be removed NOW
     }
 
-    fun resetZoom() {
-        // TODO calc bounding box and apply zoom
+    fun resetZoom(animated: Boolean = true) {
+        val border = 100
+        var north: Double = (this.userMarker?.position?.latitude ?: 0.0)
+        var east: Double = (this.userMarker?.position?.longitude ?: 0.0)
+        var south: Double = (this.userMarker?.position?.latitude ?: 0.0)
+        var west: Double = (this.userMarker?.position?.longitude ?: 0.0)
+        for(point in this.otherMarkers) {
+            north = max(north, point.latitude)
+            east = max(east, point.longitude)
+            south = min(south, point.latitude)
+            west = min(west, point.longitude)
+        }
+        val boundingBox = BoundingBox(
+            north,
+            east,
+            south,
+            west
+        )
+        CoroutineScope(Dispatchers.Main).launch {
+            // In case the map was not rendered yet...
+            map!!.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
+                map!!.zoomToBoundingBox(boundingBox, animated, border)
+                map!!.invalidate()
+            }
+            // In case the map is already visible...
+            map!!.zoomToBoundingBox(boundingBox, animated, border)
+            map!!.invalidate()
+        }
     }
 }
