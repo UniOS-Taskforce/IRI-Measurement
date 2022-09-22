@@ -33,7 +33,9 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class AnalyzeFragment : Fragment() {
-    private var map: MapView? = null
+    private lateinit var mapShowSegmentMarkers: Switch
+    private lateinit var mapShowIntermediateMarkers: Switch
+    private lateinit var map: MapView
     private var mapExpanded: Boolean = true
     private val log = com.simonmicro.irimeasurement.util.Log(AnalyzeFragment::class.java.name)
     private var done: Boolean = false
@@ -72,6 +74,8 @@ class AnalyzeFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         var view: View = inflater.inflate(R.layout.fragment_analyze, container, false)
+        this.mapShowSegmentMarkers = view.findViewById(R.id.mapShowSegmentMarkers)
+        this.mapShowIntermediateMarkers = view.findViewById(R.id.mapShowIntermediateMarkers)
 
         // Init valid UserAgent for the map (otherwise tiles won't load)
         val s = BuildConfig.APPLICATION_ID + "@" + BuildConfig.VERSION_NAME
@@ -80,9 +84,9 @@ class AnalyzeFragment : Fragment() {
 
         // Init the map
         map = view.findViewById<MapView>(R.id.map)
-        map!!.setTileSource(TileSourceFactory.MAPNIK)
-        map!!.setMultiTouchControls(true)
-        val mapDefaultMargin: Int = map!!.marginBottom
+        map.setTileSource(TileSourceFactory.MAPNIK)
+        map.setMultiTouchControls(true)
+        val mapDefaultMargin: Int = map.marginBottom
 
         // Add map resize (with animation) to the button
         var resizeButtn: FloatingActionButton = view.findViewById<FloatingActionButton>(R.id.toggleLayoutButton)
@@ -103,9 +107,9 @@ class AnalyzeFragment : Fragment() {
             valueAnimator.duration = 500L
             valueAnimator.addUpdateListener {
                 val animatedValue = valueAnimator.animatedValue as Int
-                val params: ViewGroup.LayoutParams = map!!.layoutParams
+                val params: ViewGroup.LayoutParams = map.layoutParams
                 params.height = animatedValue
-                map!!.layoutParams = params
+                map.layoutParams = params
             }
             valueAnimator.start()
         }
@@ -201,30 +205,32 @@ class AnalyzeFragment : Fragment() {
             this.userMarker!!.icon = resources.getDrawable(org.osmdroid.library.R.drawable.person)
             this.userMarker!!.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             this.userMarker!!.title = "Your are here!"
-            map!!.overlays.add(this.userMarker)
+            map.overlays.add(this.userMarker)
         }
         this.userMarker!!.position = GeoPoint(lat, lon)
-        map!!.invalidate() // This forces the point to be visible NOW
+        map.invalidate() // This forces the point to be visible NOW
     }
 
     private var otherMarkers = ArrayList<GeoPoint>()
     fun addSegmentMarker(location: LocationPoint) {
+        if(!this.mapShowSegmentMarkers.isChecked) return
         val m = Marker(map)
         m.position = GeoPoint(location.locLat, location.locLon)
         otherMarkers.add(m.position)
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        map!!.overlays.add(m)
-        map!!.invalidate() // This forces the points to be visible NOW
+        map.overlays.add(m)
+        map.invalidate() // This forces the points to be visible NOW
     }
 
     fun addIntermediateMarker(location: LocationPoint) {
+        if(!this.mapShowIntermediateMarkers.isChecked) return
         val m = Marker(map)
         m.position = GeoPoint(location.locLat, location.locLon)
         otherMarkers.add(m.position)
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default_focused_base)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        map!!.overlays.add(m)
+        map.overlays.add(m)
     }
 
     fun addLineMarker(locations: List<LocationPoint>, title: String?) {
@@ -236,16 +242,16 @@ class AnalyzeFragment : Fragment() {
         line.setPoints(points)
         if(title != null)
             line.title = title
-        map!!.overlays.add(line)
-        map!!.invalidate() // This forces the points to be visible NOW
+        map.overlays.add(line)
+        map.invalidate() // This forces the points to be visible NOW
     }
 
     fun clearMarkers() {
-        map!!.overlays.removeAll {
+        map.overlays.removeAll {
             it != this.userMarker // Clear all except our user markers
         }
         otherMarkers.clear()
-        map!!.invalidate() // This forces the points to be removed NOW
+        map.invalidate() // This forces the points to be removed NOW
     }
 
     fun resetZoom(animated: Boolean = true) {
@@ -268,13 +274,13 @@ class AnalyzeFragment : Fragment() {
         )
         CoroutineScope(Dispatchers.Main).launch {
             // In case the map was not rendered yet...
-            map!!.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
-                map!!.zoomToBoundingBox(boundingBox, animated, border)
-                map!!.invalidate()
+            map.addOnFirstLayoutListener { _: View?, _: Int, _: Int, _: Int, _: Int ->
+                map.zoomToBoundingBox(boundingBox, animated, border)
+                map.invalidate()
             }
             // In case the map is already visible...
-            map!!.zoomToBoundingBox(boundingBox, animated, border)
-            map!!.invalidate()
+            map.zoomToBoundingBox(boundingBox, animated, border)
+            map.invalidate()
         }
     }
 }

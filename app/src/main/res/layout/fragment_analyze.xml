@@ -86,6 +86,26 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="..." />
+
+            <Switch
+                android:id="@+id/mapShowSegmentMarkers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Show real locations" />
+
+            <Switch
+                android:id="@+id/mapShowIntermediateMarkers"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Show estimated locations" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textStyle="italic"
+                android:text="Please rerun the analysis to apply your changes." />
         </LinearLayout>
 
     </LinearLayout>
