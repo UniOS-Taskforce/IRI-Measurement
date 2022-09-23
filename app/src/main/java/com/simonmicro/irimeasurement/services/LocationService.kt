@@ -26,11 +26,12 @@ import com.google.android.material.snackbar.Snackbar
 import com.simonmicro.irimeasurement.RequestCodes
 import java.lang.Math.min
 import java.util.concurrent.TimeUnit
-import java.util.function.Consumer
 
 class LocationService(private val context: Context, activity: AppCompatActivity?) {
     private var glsClient: FusedLocationProviderClient? = null
     private var nativeManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+    private val timeoutCurrentLocation = 4000
+    private val timeoutGLSLocation = 4000
 
     companion object {
         private val log = com.simonmicro.irimeasurement.util.Log(LocationService::class.java.name)
@@ -159,22 +160,20 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         // Fetch GLS
         if(glsClient != null) {
             val task = glsClient!!.getCurrentLocation(0, null)
-            val timeout = 50 // 5 seconds!
-            for(i in 1..timeout) {
+            for(i in 1..(timeoutGLSLocation / 100)) {
                 if(task.isSuccessful) {
                     locationsToChooseFrom.add(task.result)
                     break
-                } else if(i == timeout)
+                } else if(i == (timeoutGLSLocation / 100))
                     log.w("Timed out while waiting for current location of the GLS...")
                 TimeUnit.MILLISECONDS.sleep(100L)
             }
         }
 
-        val timeout = 100 // 10 seconds!
-        for(i in 1..timeout) {
+        for(i in 1..(timeoutCurrentLocation / 100)) {
             if(waitingForResponses == 0)
                 break
-            else if(i == timeout)
+            else if(i == (timeoutCurrentLocation / 100))
                 log.w("Timed out while waiting for current locations: $waitingForResponses")
             TimeUnit.MILLISECONDS.sleep(100L)
         }
@@ -209,12 +208,11 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         // Fetch GLS
         if(glsClient != null) {
             val task = glsClient!!.lastLocation
-            val timeout = 50 // 5 seconds!
-            for(i in 1..timeout) {
+            for(i in 1..(timeoutGLSLocation / 100)) {
                 if(task.isSuccessful) {
                     locationsToChooseFrom.add(task.result)
                     break
-                } else if(i == timeout)
+                } else if(i == (timeoutGLSLocation / 100))
                     log.w("Timed out while waiting for last location of the GLS...")
                 TimeUnit.MILLISECONDS.sleep(100L)
             }
