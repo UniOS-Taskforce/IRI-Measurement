@@ -1,5 +1,6 @@
 package com.simonmicro.irimeasurement
 
+import android.os.Build
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -20,12 +21,15 @@ import kotlin.io.path.writeText
 
 class Collection(val id: UUID) {
     data class CollectionMeta (
-        var started: Date = Date(),
+        var started: Date = Date(0),
         var finished: Date? = null,
         var pointCount: Long = 0,
         var dataSets: ArrayList<String> = ArrayList(),
         var locationTags: ArrayList<String> = ArrayList(),
-        var version: String = BuildConfig.VERSION_NAME
+        var version: String = "",
+        var device: String = "", // For internal use only
+        var model: String = "-",
+        var manufacturer: String = "-"
     )
 
     private val path: Path = Path(StorageService.getCollectionsRoot().absolutePath.toString(), this.id.toString())
@@ -111,7 +115,8 @@ class Collection(val id: UUID) {
                 "Sets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\n" +
                 "Location Tags: ${this.meta.locationTags.joinToString(prefix = "{", postfix = "}") { it }}\n" +
                 "Size: ${StorageService.getBytesBetterString(this.getSizeBytes())}\n" +
-                "Version: ${this.meta.version}"
+                "Version: ${this.meta.version}\n" +
+                "Device: ${this.meta.model} (${this.meta.manufacturer})"
     }
 
     fun getMeta(): CollectionMeta {
@@ -122,6 +127,12 @@ class Collection(val id: UUID) {
         if(this.exist())
             return
         this.path.toFile().mkdir()
+        // Init some fields only on fresh creation
+        this.meta.started = Date()
+        this.meta.version = BuildConfig.VERSION_NAME
+        this.meta.device = Build.DEVICE
+        this.meta.model = Build.MODEL
+        this.meta.manufacturer = Build.MANUFACTURER
         this.writeMetaData()
     }
 
