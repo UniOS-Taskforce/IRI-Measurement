@@ -11,6 +11,7 @@ import android.location.Criteria
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Looper
 import android.view.View
 import android.widget.TextView
@@ -25,6 +26,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.simonmicro.irimeasurement.RequestCodes
 import java.lang.Math.min
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 class LocationService(private val context: Context, activity: AppCompatActivity?) {
     private var glsClient: FusedLocationProviderClient? = null
@@ -114,7 +116,7 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
     }
 
     fun getLocationTags(): Array<String> {
-        val tags = mutableSetOf("native") // Native is always available
+        val tags = mutableSetOf<String>()
         tags.addAll(allKnownNativeProviders)
         if(glsClient != null) {
             tags.add("GLS")
@@ -125,7 +127,72 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
     }
 
     @SuppressLint("MissingPermission")
-    fun getUserLocation(showWarning: Boolean = true): Location? {
+    fun getCurrentLocation(showWarning: Boolean = true): Location? {
+        if(!this.hasLocationPermissions())
+            return null
+        this.updateKnownNativeProviders()
+
+        val locationsToChooseFrom = ArrayList<Location>()
+
+        // Silent attempt to get the most recent location
+        val last = this.getLastLocation(false)
+        if(last != null)
+            locationsToChooseFrom.add(last)
+        var waitingForResponses = 0
+
+        // Fetch all native ones
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            for(provider in allKnownNativeProviders) {
+                nativeManager.getCurrentLocation(
+                    LocationManager.GPS_PROVIDER,
+                    null,
+                    this.context.mainExecutor
+                ) {
+                    log.d("Current location by $provider arrived: $it")
+                    locationsToChooseFrom.add(it)
+                    waitingForResponses -= 1
+                }
+                waitingForResponses += 1
+            }
+        }
+
+        // Fetch GLS
+        if(glsClient != null) {
+            val task = glsClient!!.getCurrentLocation(0, null)
+            val timeout = 50 // 5 seconds!
+            for(i in 1..timeout) {
+                if(task.isSuccessful) {
+                    locationsToChooseFrom.add(task.result)
+                    break
+                } else if(i == timeout)
+                    log.w("Timed out while waiting for current location of the GLS...")
+                TimeUnit.MILLISECONDS.sleep(100L)
+            }
+        }
+
+        val timeout = 100 // 10 seconds!
+        for(i in 1..timeout) {
+            if(waitingForResponses == 0)
+                break
+            else if(i == timeout)
+                log.w("Timed out while waiting for current locations: $waitingForResponses")
+            TimeUnit.MILLISECONDS.sleep(100L)
+        }
+
+        // Select the freshest location
+        var returnMe: Location? = null
+        for(loc in locationsToChooseFrom)
+            if(returnMe == null || loc.time > returnMe.time)
+                returnMe = loc
+
+        if(returnMe == null)
+            showWarning("Location is currently unavailable...", showWarning)
+
+        return returnMe
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getLastLocation(showWarning: Boolean = true): Location? {
         if(!this.hasLocationPermissions())
             return null
         this.updateKnownNativeProviders()
@@ -142,13 +209,13 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         // Fetch GLS
         if(glsClient != null) {
             val task = glsClient!!.lastLocation
-            val timeout = 100
+            val timeout = 50 // 5 seconds!
             for(i in 1..timeout) {
                 if(task.isSuccessful) {
                     locationsToChooseFrom.add(task.result)
                     break
                 } else if(i == timeout)
-                    log.w("Timed out while waiting for location of the GLS...")
+                    log.w("Timed out while waiting for last location of the GLS...")
                 TimeUnit.MILLISECONDS.sleep(100L)
             }
         }
@@ -160,7 +227,7 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
                 returnMe = loc
 
         if(returnMe == null)
-            showWarning("Location currently unavailable...", showWarning)
+            showWarning("Location is currently unavailable...", showWarning)
 
         return returnMe
     }
@@ -176,7 +243,7 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         // Register native ones
         for(provider in allKnownNativeProviders) {
             try {
-                nativeManager.requestLocationUpdates(provider, 100, 0.0f, lLs, looper)
+                nativeManager.requestLocationUpdates(provider, 1000, 0.0f, lLs, looper)
                 registered = true
             } catch (e: Exception) {
                 log.w("Failed to listen for location updates: $provider")
@@ -187,7 +254,7 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         if(glsClient != null) {
             val lr: LocationRequest = LocationRequest.create()
             lr.smallestDisplacement = 0.0f
-            lr.interval = 100
+            lr.interval = 1000
             glsClient!!.requestLocationUpdates(lr, lCb, looper)
             registered = true
         }
@@ -203,12 +270,10 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         this.updateKnownNativeProviders()
 
         // Deregister native ones
-        for(provider in allKnownNativeProviders) {
-            try {
-                nativeManager.removeUpdates(lLs)
-            } catch (e: Exception) {
-                log.w("Failed to listen for location updates: $provider")
-            }
+        try {
+            nativeManager.removeUpdates(lLs)
+        } catch (e: Exception) {
+            log.w("Failed to stop listening for location updates: ${e.stackTraceToString()}")
         }
 
         // Deregister on GLS

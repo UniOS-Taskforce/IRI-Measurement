@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import java.util.*
 
 fun Float.format(digits: Int) = "%.${digits}f".format(this)
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
@@ -36,6 +37,7 @@ class CollectFragment : Fragment() {
     private var serviceUptime: TextView? = null
     private var serviceCollectionId: TextView? = null
     private var serviceFreeSpace: TextView? = null
+    private var serviceLastTime: TextView? = null
     private var serviceLastAccel: TextView? = null
     private var serviceLastGrav: TextView? = null
     private var serviceLastMag: TextView? = null
@@ -130,7 +132,8 @@ class CollectFragment : Fragment() {
             if (service.lastHumidityPoint != null)
                 this.serviceLastHumi?.text = "${service.lastHumidityPoint!!.amount.format(2)} hPa"
             if (service.lastLocation != null) {
-                this.serviceLastLoc?.text = "↑ ${service.lastLocation!!.locHeight.format(2)} m, lon ${service.lastLocation!!.locLon.format(2)} °, lat ${service.lastLocation!!.locLat.format(2)} °"
+                this.serviceLastTime?.text = Date(service.lastLocation!!.time).toString()
+                this.serviceLastLoc?.text = "↑ ${service.lastLocation!!.locHeight.format(2)} m, lon ${service.lastLocation!!.locLon.format(5)} °, lat ${service.lastLocation!!.locLat.format(5)} °"
                 var accuracy = "±${service.lastLocation!!.accuDir.format(2)} °, ↑ ±${service.lastLocation!!.accuHeight.format(2)} m, "
                 accuracy += "±${service.lastLocation!!.accuLonLat.format(2)} m"
                 this.serviceLastLocAccu?.text = accuracy
@@ -163,6 +166,7 @@ class CollectFragment : Fragment() {
         this.serviceUptime = view.findViewById<TextView>(R.id.collectorUptime)
         this.serviceCollectionId = view.findViewById<TextView>(R.id.collectionId)
         this.serviceFreeSpace = view.findViewById<TextView>(R.id.freeSpace)
+        this.serviceLastTime = view.findViewById<TextView>(R.id.collectorLocTime)
         this.serviceLastAccel = view.findViewById<TextView>(R.id.collectorAccel)
         this.serviceLastMag = view.findViewById<TextView>(R.id.collectorMag)
         this.serviceLastGrav = view.findViewById<TextView>(R.id.collectorGrav)

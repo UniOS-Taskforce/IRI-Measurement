@@ -2,7 +2,6 @@ package com.simonmicro.irimeasurement.ui
 
 import android.animation.ValueAnimator
 import android.graphics.Color
-import android.graphics.Paint
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
@@ -13,11 +12,8 @@ import android.widget.*
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.google.android.gms.tasks.Task
 import com.simonmicro.irimeasurement.*
 import com.simonmicro.irimeasurement.services.StorageService
-import com.simonmicro.irimeasurement.Collection
-import com.simonmicro.irimeasurement.services.IRICalculationService
 import com.simonmicro.irimeasurement.services.points.LocationPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -125,7 +121,7 @@ class AnalyzeFragment : Fragment() {
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
                     if(that.done) return
-                    var loc = HomeScreen.locService!!.getUserLocation()
+                    var loc = HomeScreen.locService!!.getLastLocation()
                     if(lastUserLocation == null || lastUserLocation != loc) {
                         log.d("Pushing current location to map: $loc")
                         if (loc != null && !that.done) // Also respect done flag here, as this task may completes after the view switched

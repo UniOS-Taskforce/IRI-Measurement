@@ -9,7 +9,6 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
-import android.os.Build
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -34,6 +33,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     }
 
     private var nId = 0
+    private val loopExpireIn = 10000L // Stuff will begin to expire after 10 seconds (notifications, wakelocks, ...)
     private var notificationBuilder: NotificationCompat.Builder? = null
     private val log = com.simonmicro.irimeasurement.util.Log(CollectorService::class.java.name)
     private lateinit var sensorManager: SensorManager
@@ -193,23 +193,21 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
         // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
         if(this.lastLocation == null || Date().time - this.lastLocation!!.time > 5 * 1000) {
-            var loc = this.locService!!.getUserLocation(showWarning = false)
-            if (loc != null && loc != this.lastLocationObject) {
+            var loc = this.locService!!.getCurrentLocation(showWarning = false)
+            if (loc != null)
                 this.saveLocation(loc, true)
-                this.lastLocationObject = loc
-            }
         }
 
         // Refresh the wakelocks
         try {
             if (this.wakelockScreen != null && !this.wakelockScreen!!.isHeld)
-                this.wakelockScreen!!.acquire(10 * 1000) // Auto-expire in 10 seconds
+                this.wakelockScreen!!.acquire(this.loopExpireIn)
         } catch (e: Exception) {
             this.log.w("Failed to acquire the screen wake-lock: ${e.stackTraceToString()}")
         }
         try {
             if (this.wakelockCPU != null && !this.wakelockCPU!!.isHeld)
-                this.wakelockCPU!!.acquire(10 * 1000) // Auto-expire in 10 seconds
+                this.wakelockCPU!!.acquire(this.loopExpireIn)
         } catch (e: Exception) {
             this.log.w("Failed to acquire the cpu wake-lock: ${e.stackTraceToString()}")
         }
@@ -236,7 +234,6 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         com.simonmicro.irimeasurement.util.Log.sendLogsToCollection(null) // Stop logging to collection
-        this.collection!!.completed(this.locService!!.getLocationTags())
         this.locService!!.stopLocationUpdates(this.locCallback, this)
         if(this.wakelockScreen != null && this.wakelockScreen!!.isHeld)
             this.wakelockScreen!!.release()
@@ -244,6 +241,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.wakelockCPU!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
+        this.collection!!.completed(this.locService!!.getLocationTags()) // May not executed because of crash, even if collection itself was successful: Finish after all inputs are stopped!
     }
 
     override fun doWork(): Result {
@@ -295,7 +293,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             .setContentText("Starting...")
             .setSmallIcon(R.drawable.ic_twotone_fiber_manual_record_24)
             .setOngoing(true)
-            .setTimeoutAfter(10000) // Just re-emit it to prevent is from removal - used to "timeout" if we crash badly
+            .setTimeoutAfter(this.loopExpireIn) // Just re-emit it to prevent is from removal - used to "timeout" if we crash badly
             .setOnlyAlertOnce(true) // Silence on repeated updates!
 
         return ForegroundInfo(nId, this.notificationBuilder!!.build())
@@ -343,11 +341,14 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     }
 
     private fun saveLocation(location: Location, wasQueried: Boolean) {
+        val loc = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed, wasQueried)
         runBlocking { dataPointMutex.lock() }
-        this.dataPointCount++
-        val l = LocationPoint(location.altitude, location.longitude, location.latitude, location.bearingAccuracyDegrees, location.verticalAccuracyMeters, location.accuracy, location.bearing, location.speed, wasQueried)
-        this.lastLocation = l
-        this.locationHistory.add(l)
+        if(loc != this.lastLocation) {
+            this.dataPointCount++
+            this.locationHistory.add(loc)
+            this.lastLocation = loc
+        } else
+            log.d("Ignored duplicate location \"update\" for $loc")
         runBlocking { dataPointMutex.unlock() }
         CollectFragment.asyncUpdateUI()
     }
