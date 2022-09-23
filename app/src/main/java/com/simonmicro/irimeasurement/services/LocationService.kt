@@ -32,12 +32,12 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
     private var nativeManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val timeoutCurrentLocation = 4000
     private val timeoutGLSLocation = 4000
+    private var allKnownNativeProviders = mutableSetOf<String>()
+    private var allGLSTags = mutableSetOf<String>()
 
     companion object {
         private val log = com.simonmicro.irimeasurement.util.Log(LocationService::class.java.name)
         private var showLocationInitMsg = true
-        private var allKnownNativeProviders = mutableSetOf<String>()
-        private var allGLSTags = mutableSetOf<String>()
         var snackbarTarget: View? = null // onDestroy() will remove that again :)
 
         private fun showWarning(msg: String, showSnack: Boolean) {
@@ -73,39 +73,65 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
     }
 
     init {
+        this.initializeProviders(false, activity)
+    }
+
+    private fun initializeProviders(forceShowMessage: Boolean, activity: Activity?) {
+        this.allKnownNativeProviders.clear()
+        this.allGLSTags.clear()
         this.updateKnownNativeProviders()
         val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)
-        if (googlePlayStatus != ConnectionResult.SUCCESS) {
+        if (googlePlayStatus == ConnectionResult.SUCCESS) {
             val builder = LocationSettingsRequest.Builder()
             val client: SettingsClient = LocationServices.getSettingsClient(context)
+            val showLocationInitMsgBackup = showLocationInitMsg // In case the GLS come available directly after we finish here, we want to "reshow" the snackbar - respecting the force override
             client.checkLocationSettings(builder.build()).addOnSuccessListener {
-                glsClient = LocationServices.getFusedLocationProviderClient(context)
                 if (it.locationSettingsStates?.isGpsUsable == true)
                     allGLSTags.add("GPS")
                 if (it.locationSettingsStates?.isBleUsable == true)
                     allGLSTags.add("BLE")
                 if (it.locationSettingsStates?.isNetworkLocationUsable == true)
                     allGLSTags.add("NET")
+                showLocationInitMsg = showLocationInitMsgBackup
+                this.afterInitializeProviders(forceShowMessage, googlePlayStatus) // Retrigger, as we just got a result!
             }.addOnFailureListener { exception ->
                 if (exception is ResolvableApiException) {
                     // Location settings are not satisfied, but this can be fixed by showing the user a dialog.
                     try {
-                        // Show the dialog by calling startResolutionForResult(),
-                        // and check the result in onActivityResult().
+                        log.w("GLS settings incorrect: ${exception.stackTraceToString()}")
                         if (activity != null)
-                            exception.startResolutionForResult(activity, RequestCodes.REQUEST_GLS_SETTINGS_FIX) // The response itself it not really processed
+                            exception.startResolutionForResult(activity, RequestCodes.REQUEST_GLS_SETTINGS_FIX) // The response itself is not really processed
                     } catch (sendEx: IntentSender.SendIntentException) {
-                        // Ignore the error.
-                        log.w(sendEx.stackTraceToString())
+                        log.e("GLS settings incorrect (tried to resolve): ${exception.stackTraceToString()}\n++ not resolvable because of ++\n${sendEx.stackTraceToString()}")
                     }
-                }
+                } else
+                    log.e("GLS settings incorrect (not resolvable): ${exception.stackTraceToString()}")
             }
+            glsClient = LocationServices.getFusedLocationProviderClient(context)
         }
-        if(glsClient == null)
-            showWarning("Google Play Services are not available (${serviceStatusToString(googlePlayStatus)}) - using native Android providers only (${allKnownNativeProviders.joinToString()}).", showLocationInitMsg)
-        else
-            showWarning("Google Play services are used for location (${allGLSTags.joinToString()}) in addition to native Android providers (${allKnownNativeProviders.joinToString()}).", showLocationInitMsg)
-        if(snackbarTarget != null)
+        this.afterInitializeProviders(forceShowMessage, googlePlayStatus)
+    }
+
+    private fun afterInitializeProviders(forceShowMessage: Boolean, googlePlayStatus: Int) {
+        // Generate location status report
+        log.d("Location status: GLS? $allGLSTags, Native? $allKnownNativeProviders")
+        var msg =
+            if (googlePlayStatus == ConnectionResult.SUCCESS) {
+                assert(glsClient != null) { "If GLS is available, we should have access to the gls client!" }
+                if(allGLSTags.isEmpty())
+                    "Google Play Services are available, but inaccessible."
+                else
+                    "Google Play Services are used for location (${allGLSTags.joinToString()})."
+            } else {
+                "Google Play Services are not available (${serviceStatusToString(googlePlayStatus)})."
+            }
+        msg += " " +
+                if(allKnownNativeProviders.isEmpty())
+                    "Native Android providers are not available or inaccessible."
+                else
+                    "Using native Android providers (${allKnownNativeProviders.joinToString()})."
+        showWarning(msg, showLocationInitMsg || forceShowMessage)
+        if(snackbarTarget != null) // If it was shown, do not show again!
             showLocationInitMsg = false
     }
 
@@ -159,7 +185,7 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
 
         // Fetch GLS
         if(glsClient != null) {
-            val task = glsClient!!.getCurrentLocation(0, null)
+            val task = glsClient!!.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
             for(i in 1..(timeoutGLSLocation / 100)) {
                 if(task.isSuccessful) {
                     locationsToChooseFrom.add(task.result)
@@ -325,15 +351,18 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
             permissionsToRequest.add(permissions[i])
         }
 
-        // Show an alert
-        if (showExplanation) {
-            val builder = AlertDialog.Builder(this.context)
-            builder.setTitle("Permission" + (if (permissionsToRequest.size > 1) "s" else "") + " required!")
-                .setMessage("As you may already have noted, using a GEO-application will require using your PRECISE location. " +
-                "Please grant its usage (make sure to also allow precise location access!) - otherwise the app may won't be able to proceed...")
-            val alert = builder.create()
-            alert.show()
+        if(permissionsToRequest.isNotEmpty()) {
+            // Show an alert
+            if (showExplanation) {
+                val builder = AlertDialog.Builder(this.context)
+                builder.setTitle("Permission" + (if (permissionsToRequest.size > 1) "s" else "") + " required!")
+                    .setMessage("As you may already have noted, using a GEO-application will require using your PRECISE location. " +
+                    "Please grant its usage (make sure to also allow precise location access!) - otherwise the app may won't be able to proceed...")
+                val alert = builder.create()
+                alert.show()
+            } else
+                showWarning("A permission for location is missing. The requested function is may not available.", true)
         } else
-            showWarning("A permission for location is missing. The requested function is may not available.", true)
+            this.initializeProviders(true,null)
     }
 }

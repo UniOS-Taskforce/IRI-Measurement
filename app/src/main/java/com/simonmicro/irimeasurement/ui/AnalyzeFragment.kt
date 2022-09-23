@@ -203,6 +203,7 @@ class AnalyzeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        this.activeAnalysisThread = null // This should also terminate that one...
         this.done = true
     }
 

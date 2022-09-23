@@ -72,7 +72,7 @@ class IRICalculationService {
                 location.add(loc)
         }
         if(start == null || end == null || start == end)
-            throw RuntimeException("Not enough timepoints available to find a separate start and end point for at least one section?!")
+            throw RuntimeException("Not enough timepoints available to find a separate start and end point for at least one section!")
         this.collectionData = CollectionData(start, end, accelerometer, location)
     }
 
@@ -89,6 +89,8 @@ class IRICalculationService {
      * the time in question.
      */
     private fun getLocation(date: Date): EstimatedLocationPoint {
+        if(this.collectionData.location.isEmpty())
+            throw RuntimeException("The collection must have at least one location stored!")
         val time: Long = date.time
         // Find the from and to locations to interpolate between
         var from: LocationPoint? = null
@@ -104,7 +106,7 @@ class IRICalculationService {
                 break
             }
         }
-        var back: LocationPoint = this.collectionData.location[this.collectionData.location.size - 1]
+        val back: LocationPoint = this.collectionData.location[this.collectionData.location.size - 1]
         if(from == null && to == null && time > back.time) {
             // We requested a point beyond our data... So we have no information!
             from = back
@@ -158,7 +160,8 @@ class IRICalculationService {
             var q: Double = p * p
             accelVar += q
         }
-        assert(this.collectionData.accelerometer.size > 1) { "For the variance calculation we need at least two points (otherwise divide by zero)!" }
+        if(this.collectionData.location.size < 2)
+            throw RuntimeException("For the variance calculation we need at least two accelerometer-points (otherwise divide by zero)!")
         accelVar /= this.collectionData.accelerometer.size - 1
         this.log.d("Accelerometer average $accelAvg with variance of $accelVar")
         for(accelId in this.collectionData.accelerometer.indices) {
