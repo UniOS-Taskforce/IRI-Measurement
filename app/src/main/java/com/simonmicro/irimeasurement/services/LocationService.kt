@@ -153,6 +153,10 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         return tags.toTypedArray()
     }
 
+    /**
+     * This function will try to retrieve the most accurate location
+     * (assuming we only work with more recent locations anyways)
+     */
     @SuppressLint("MissingPermission")
     fun getCurrentLocation(showWarning: Boolean = true): Location? {
         if(!this.hasLocationPermissions())
@@ -204,10 +208,9 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
             TimeUnit.MILLISECONDS.sleep(100L)
         }
 
-        // Select the freshest location
         var returnMe: Location? = null
         for(loc in locationsToChooseFrom)
-            if(returnMe == null || loc.time > returnMe.time)
+            if(returnMe == null || loc.accuracy < returnMe.accuracy)
                 returnMe = loc
 
         if(returnMe == null)
@@ -216,6 +219,9 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         return returnMe
     }
 
+    /**
+     * This function will try to retrieve the most recent location
+     */
     @SuppressLint("MissingPermission")
     fun getLastLocation(showWarning: Boolean = true): Location? {
         if(!this.hasLocationPermissions())
