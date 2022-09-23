@@ -109,7 +109,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         // Inform the WorkManager that this is a long-running service-task
         setForegroundAsync(createForegroundInfo()) // This will also create our ongoing notification
         // Check if we got location permissions
-        this.locService = LocationService(applicationContext)
+        this.locService = LocationService(this.applicationContext, null)
         if(!this.locService!!.hasLocationPermissions())
             throw RuntimeException("Missing permissions - service can't start!")
         // Create new collection for this run
@@ -192,15 +192,13 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         }
 
         // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
-        if(this.lastLocation == null || Date().time - this.lastLocation!!.time > 5 * 1000)
-            this.locService!!.getUserLocation(showWarning = false)?.addOnSuccessListener {
-                if(it != this.lastLocationObject) {
-                    this.saveLocation(it, true)
-                    this.lastLocationObject = it
-                }
-            }?.addOnFailureListener {
-                this.log.e("Failed to query location: ${it.stackTraceToString()}")
+        if(this.lastLocation == null || Date().time - this.lastLocation!!.time > 5 * 1000) {
+            var loc = this.locService!!.getUserLocation(showWarning = false)
+            if (loc != null && loc != this.lastLocationObject) {
+                this.saveLocation(loc, true)
+                this.lastLocationObject = loc
             }
+        }
 
         // Refresh the wakelocks
         try {
@@ -238,9 +236,8 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         instance = null // Communicate to the outside that we are already done...
         this.requestStop = true // Just in case we are instructed to stop by the WorkManager
         com.simonmicro.irimeasurement.util.Log.sendLogsToCollection(null) // Stop logging to collection
-        this.collection!!.completed(LocationService.getLocationTags())
-        if(!this.locService!!.stopLocationUpdates(this.locCallback, this))
-            this.log.w("Failed to unregister from location updates - did we ever subscribe successfully?")
+        this.collection!!.completed(this.locService!!.getLocationTags())
+        this.locService!!.stopLocationUpdates(this.locCallback, this)
         if(this.wakelockScreen != null && this.wakelockScreen!!.isHeld)
             this.wakelockScreen!!.release()
         if(this.wakelockCPU != null && this.wakelockCPU!!.isHeld)

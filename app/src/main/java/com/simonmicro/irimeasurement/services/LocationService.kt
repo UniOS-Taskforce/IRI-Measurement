@@ -21,74 +21,27 @@ import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
-import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
-import com.google.android.gms.tasks.Task
-import com.google.android.gms.tasks.Tasks
 import com.google.android.material.snackbar.Snackbar
+import com.simonmicro.irimeasurement.RequestCodes
 import java.lang.Math.min
+import java.util.concurrent.TimeUnit
 
-class LocationService(private val context: Context) {
-    private val REQUEST_PERMISSIONS_REQUEST_CODE = 1
+class LocationService(private val context: Context, activity: AppCompatActivity?) {
+    private var glsClient: FusedLocationProviderClient? = null
+    private var nativeManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
     companion object {
         private val log = com.simonmicro.irimeasurement.util.Log(LocationService::class.java.name)
-        private lateinit var snackbarTarget: View
-        private var fusedLocationClient: FusedLocationProviderClient? = null
-        private var nativeManager: LocationManager? = null
-        private var nativeProvider: String? = null
-        private var locationTags = ArrayList<String>()
-
-        fun initialize(activity: AppCompatActivity, snackbarTarget: View) {
-            this.snackbarTarget = snackbarTarget
-            val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(activity)
-            if(googlePlayStatus != ConnectionResult.SUCCESS) {
-                this.nativeManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-                var c = Criteria()
-                c.isCostAllowed = true // At all costs ;)
-                this.nativeProvider = this.nativeManager!!.getBestProvider(c, true)
-                if (this.nativeProvider != null)
-                    locationTags.add(this.nativeProvider!!)
-                locationTags.add("native")
-                this.showWarning("Google Play Services are not available (${this.serviceStatusToString(googlePlayStatus)}). Using native Android provider instead (${this.nativeProvider})...", true)
-            } else {
-                val builder = LocationSettingsRequest.Builder()
-
-                val client: SettingsClient = LocationServices.getSettingsClient(activity)
-                client.checkLocationSettings(builder.build()).addOnSuccessListener {
-                    this.showWarning("Google Play services are used for location (GPS? ${it.locationSettingsStates?.isGpsUsable}, NET? ${it.locationSettingsStates?.isNetworkLocationUsable}, BLE? ${it.locationSettingsStates?.isBleUsable}).", true)
-                    if(it.locationSettingsStates?.isGpsUsable == true)
-                        locationTags.add("GPS")
-                    if(it.locationSettingsStates?.isBleUsable == true)
-                        locationTags.add("BLE")
-                    if(it.locationSettingsStates?.isNetworkLocationUsable == true)
-                        locationTags.add("NET")
-                    locationTags.add("GLS")
-                    fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
-                }.addOnFailureListener { exception ->
-                    if (exception is ResolvableApiException){
-                        // Location settings are not satisfied, but this can be fixed by showing the user a diathis.log.
-                        try {
-                            // Show the dialog by calling startResolutionForResult(),
-                            // and check the result in onActivityResult().
-                            exception.startResolutionForResult(activity, 1234)
-                        } catch (sendEx: IntentSender.SendIntentException) {
-                            // Ignore the error.
-                            this.log.w(sendEx.stackTraceToString())
-                        }
-                    }
-                }
-            }
-        }
-
-        fun getLocationTags(): ArrayList<String> {
-            return locationTags
-        }
+        private var showLocationInitMsg = true
+        private var allKnownNativeProviders = mutableSetOf<String>()
+        private var allGLSTags = mutableSetOf<String>()
+        var snackbarTarget: View? = null // onDestroy() will remove that again :)
 
         private fun showWarning(msg: String, showSnack: Boolean) {
             log.w(msg)
-            if(!showSnack)
+            if(!showSnack || snackbarTarget == null)
                 return
-            val snackBar = Snackbar.make(snackbarTarget, msg, Snackbar.LENGTH_INDEFINITE)
+            val snackBar = Snackbar.make(snackbarTarget!!, msg, Snackbar.LENGTH_INDEFINITE)
             snackBar.duration = min(msg.length * (1000 / 4), 4 * 1000)
             snackBar.setAction("OK") {
                 snackBar.dismiss()
@@ -116,77 +69,150 @@ class LocationService(private val context: Context) {
         }
     }
 
+    init {
+        this.updateKnownNativeProviders()
+        val googlePlayStatus = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context)
+        if (googlePlayStatus != ConnectionResult.SUCCESS) {
+            val builder = LocationSettingsRequest.Builder()
+            val client: SettingsClient = LocationServices.getSettingsClient(context)
+            client.checkLocationSettings(builder.build()).addOnSuccessListener {
+                glsClient = LocationServices.getFusedLocationProviderClient(context)
+                if (it.locationSettingsStates?.isGpsUsable == true)
+                    allGLSTags.add("GPS")
+                if (it.locationSettingsStates?.isBleUsable == true)
+                    allGLSTags.add("BLE")
+                if (it.locationSettingsStates?.isNetworkLocationUsable == true)
+                    allGLSTags.add("NET")
+            }.addOnFailureListener { exception ->
+                if (exception is ResolvableApiException) {
+                    // Location settings are not satisfied, but this can be fixed by showing the user a dialog.
+                    try {
+                        // Show the dialog by calling startResolutionForResult(),
+                        // and check the result in onActivityResult().
+                        if (activity != null)
+                            exception.startResolutionForResult(activity, RequestCodes.REQUEST_GLS_SETTINGS_FIX) // The response itself it not really processed
+                    } catch (sendEx: IntentSender.SendIntentException) {
+                        // Ignore the error.
+                        log.w(sendEx.stackTraceToString())
+                    }
+                }
+            }
+        }
+        if(glsClient == null)
+            showWarning("Google Play Services are not available (${serviceStatusToString(googlePlayStatus)}) - using native Android providers only (${allKnownNativeProviders.joinToString()}).", showLocationInitMsg)
+        else
+            showWarning("Google Play services are used for location (${allGLSTags.joinToString()}) in addition to native Android providers (${allKnownNativeProviders.joinToString()}).", showLocationInitMsg)
+        if(snackbarTarget != null)
+            showLocationInitMsg = false
+    }
+
+    private fun updateKnownNativeProviders() {
+        val c = Criteria()
+        c.isCostAllowed = true // At all costs ;)
+        for(provider in this.nativeManager.getProviders(c, false))
+            allKnownNativeProviders.add(provider)
+    }
+
+    fun getLocationTags(): Array<String> {
+        val tags = mutableSetOf("native") // Native is always available
+        tags.addAll(allKnownNativeProviders)
+        if(glsClient != null) {
+            tags.add("GLS")
+            for(tag in allGLSTags)
+                tags.add("GLS:$tag")
+        }
+        return tags.toTypedArray()
+    }
+
     @SuppressLint("MissingPermission")
-    fun getUserLocation(showWarning: Boolean = true): Task<Location>? {
+    fun getUserLocation(showWarning: Boolean = true): Location? {
         if(!this.hasLocationPermissions())
             return null
-        
-        if(fusedLocationClient != null) {
-            // This code can be used to determine if we even could get a location...
-            // fusedLocationClient!!.locationAvailability.addOnSuccessListener {
-            //    this.log.d(${it.isLocationAvailable}")
-            // }
+        this.updateKnownNativeProviders()
 
-            return fusedLocationClient!!.lastLocation
-        } else {
-            // Get the current user position (if permission is granted)
-            if (nativeProvider != null) {
-                val location = nativeManager?.getLastKnownLocation(nativeProvider!!)
-                if (location != null)
-                    return Tasks.forResult(location)
-                showWarning("Location currently unavailable...", showWarning)
-            } else
-                showWarning("No location provider available?!", showWarning)
-            return null
+        val locationsToChooseFrom = ArrayList<Location>()
+
+        // Fetch all native ones
+        for(provider in allKnownNativeProviders) {
+            val l = nativeManager.getLastKnownLocation(provider)
+            if(l != null)
+                locationsToChooseFrom.add(l)
         }
+
+        // Fetch GLS
+        if(glsClient != null) {
+            val task = glsClient!!.lastLocation
+            val timeout = 100
+            for(i in 1..timeout) {
+                if(task.isSuccessful) {
+                    locationsToChooseFrom.add(task.result)
+                    break
+                } else if(i == timeout)
+                    log.w("Timed out while waiting for location of the GLS...")
+                TimeUnit.MILLISECONDS.sleep(100L)
+            }
+        }
+
+        // Select the freshest location
+        var returnMe: Location? = null
+        for(loc in locationsToChooseFrom)
+            if(returnMe == null || loc.time > returnMe.time)
+                returnMe = loc
+
+        if(returnMe == null)
+            showWarning("Location currently unavailable...", showWarning)
+
+        return returnMe
     }
 
     @SuppressLint("MissingPermission")
     fun startLocationUpdates(looper: Looper, lCb: LocationCallback, lLs: LocationListener): Boolean {
         if(!this.hasLocationPermissions())
             return false
+        this.updateKnownNativeProviders()
 
-        if(fusedLocationClient != null) {
-            var lr: LocationRequest = LocationRequest.create()
-            lr.priority = PRIORITY_HIGH_ACCURACY
-            lr.smallestDisplacement = 0.0f
-            var flc: FusedLocationProviderClient? = fusedLocationClient
-            return if(flc != null) {
-                flc.requestLocationUpdates(lr, lCb, looper)
-                true
-            } else
-                false
-        } else {
-            return if (nativeProvider != null) {
-                nativeManager?.requestLocationUpdates(nativeProvider!!, 0, 0.0f, lLs, looper)
-                true
-            } else {
-                showWarning("Failed to register for location updates: No location provider available?!", true)
-                false
+        var registered = false
+
+        // Register native ones
+        for(provider in allKnownNativeProviders) {
+            try {
+                nativeManager.requestLocationUpdates(provider, 100, 0.0f, lLs, looper)
+                registered = true
+            } catch (e: Exception) {
+                log.w("Failed to listen for location updates: $provider")
             }
         }
+
+        // Register on GLS
+        if(glsClient != null) {
+            val lr: LocationRequest = LocationRequest.create()
+            lr.smallestDisplacement = 0.0f
+            lr.interval = 100
+            glsClient!!.requestLocationUpdates(lr, lCb, looper)
+            registered = true
+        }
+
+        if(!registered)
+            showWarning("Failed to register for location updates: No location provider available?!", true)
+        return registered
     }
 
-    fun stopLocationUpdates(lCb: LocationCallback, lLs: LocationListener): Boolean {
+    fun stopLocationUpdates(lCb: LocationCallback, lLs: LocationListener) {
         if(!this.hasLocationPermissions())
-            return false
+            return
+        this.updateKnownNativeProviders()
 
-        if(fusedLocationClient != null) {
-            var flc: FusedLocationProviderClient? = fusedLocationClient
-            return if(flc != null) {
-                flc.removeLocationUpdates(lCb)
-                true
-            } else
-                false
-        } else {
-            return if (nativeProvider != null) {
-                nativeManager?.removeUpdates(lLs)
-                true
-            } else {
-                showWarning("Failed to unregister for location updates: No location provider available?!", true)
-                false
+        // Deregister native ones
+        for(provider in allKnownNativeProviders) {
+            try {
+                nativeManager.removeUpdates(lLs)
+            } catch (e: Exception) {
+                log.w("Failed to listen for location updates: $provider")
             }
         }
+
+        // Deregister on GLS
+        glsClient?.removeLocationUpdates(lCb)
     }
 
     fun hasLocationPermissions(requirePrecise: Boolean = false, showWarning: Boolean = true): Boolean {
@@ -216,7 +242,7 @@ class LocationService(private val context: Context) {
         // Try to get them!
         if (permissionsToRequest.size > 0) {
             log.d("We are missing ${permissionsToRequest.size} permissions. Requesting...")
-            ActivityCompat.requestPermissions(activity, permissionsToRequest.toTypedArray(), REQUEST_PERMISSIONS_REQUEST_CODE)
+            ActivityCompat.requestPermissions(activity, permissionsToRequest.toTypedArray(), RequestCodes.REQUEST_PERMISSIONS_GRANT)
             return false
         }
         return true
@@ -226,7 +252,7 @@ class LocationService(private val context: Context) {
      * Please make sure to forward the callback to your activity back to here!
      */
     fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if(requestCode != REQUEST_PERMISSIONS_REQUEST_CODE)
+        if(requestCode != RequestCodes.REQUEST_PERMISSIONS_GRANT)
             return
         val permissionsToRequest = ArrayList<String>()
         var showExplanation = false

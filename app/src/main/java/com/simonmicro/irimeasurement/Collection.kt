@@ -155,8 +155,9 @@ class Collection(val id: UUID) {
         return size
     }
 
-    fun completed(locationTags: ArrayList<String>) {
-        this.meta.locationTags = locationTags
+    fun completed(locationTags: Array<String>) {
+        this.meta.locationTags.clear()
+        this.meta.locationTags.addAll(locationTags)
         this.meta.finished = Date()
         this.writeMetaData()
     }

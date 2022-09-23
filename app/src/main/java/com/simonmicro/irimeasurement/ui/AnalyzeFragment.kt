@@ -125,17 +125,14 @@ class AnalyzeFragment : Fragment() {
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
                     if(that.done) return
-                    HomeScreen.locService!!.getUserLocation()?.addOnSuccessListener {
-                        if(lastUserLocation == null || lastUserLocation != it) {
-                            log.d("Pushing current location to map: $it")
-                            if (it != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
-                                that.showUserLocation(it.latitude, it.longitude)
-                            if(lastUserLocation == null) // Only first time: Reset zoom
-                                that.resetZoom(respectUserLocation = true, animated = false)
-                            lastUserLocation = it
-                        }
-                    }?.addOnFailureListener {
-                        log.e("Failed to push current position to map: ${it.stackTraceToString()}")
+                    var loc = HomeScreen.locService!!.getUserLocation()
+                    if(lastUserLocation == null || lastUserLocation != loc) {
+                        log.d("Pushing current location to map: $loc")
+                        if (loc != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
+                            that.showUserLocation(loc.latitude, loc.longitude)
+                        if(lastUserLocation == null) // Only first time: Reset zoom
+                            that.resetZoom(respectUserLocation = true, animated = false)
+                        lastUserLocation = loc
                     }
                     handler.postDelayed(this, 1000)
                 }

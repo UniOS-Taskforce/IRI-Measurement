@@ -19,7 +19,7 @@ class HomeScreen : AppCompatActivity() {
     private lateinit var binding: ActivityHomeScreenBinding
 
     companion object {
-        var locService: LocationService? = null
+        var locService: LocationService? = null // Only to be used by the fragments
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,13 +27,13 @@ class HomeScreen : AppCompatActivity() {
         window.requestFeature(Window.FEATURE_ACTION_BAR)
 
         // Init other services
-        HomeScreen.locService = LocationService(this)
         StorageService.initWithContext(this)
 
         // Init action bar
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        LocationService.initialize(this, this.findViewById(R.id.container))// Init this service after the binding (and therfore snackbar-target) is available
+        LocationService.snackbarTarget = this.findViewById(R.id.container)
+        HomeScreen.locService = LocationService(this, this)
         binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME
 
         // Prepare the UI
@@ -70,5 +70,12 @@ class HomeScreen : AppCompatActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         HomeScreen.locService!!.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clear static fields
+        LocationService.snackbarTarget = null
+        locService = null
     }
 }
