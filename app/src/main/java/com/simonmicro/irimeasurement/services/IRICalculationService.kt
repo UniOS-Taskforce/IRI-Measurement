@@ -21,6 +21,8 @@ class IRICalculationService {
         var accelerometer: List<AccelerometerPoint>,
         var location: List<LocationPoint>
     ) { }
+    private var useAccelerometer: Boolean
+    private var useGeocoding: Boolean
     private val context: Context
     private val collection: Collection
     private var collectionData: CollectionData
@@ -46,9 +48,11 @@ class IRICalculationService {
         }
     }
 
-    constructor(collection: Collection, context: Context) {
+    constructor(collection: Collection, context: Context, useAccelerometer: Boolean, useGeocoding: Boolean) {
         this.context = context // Used for Geocoder
         this.collection = collection
+        this.useAccelerometer = useAccelerometer
+        this.useGeocoding = useGeocoding
         // Load accelerometer data
         var start: Date? = null
         var end: Date? = null
@@ -149,55 +153,62 @@ class IRICalculationService {
      */
     fun getSectionRecommendations(progressNotification: (description: String, percent: Double) -> Unit): List<Segment> {
         var sectionTimes = ArrayList<Date>()
-        // Search all times were acceleration differs greater than variance from average
-        var accelAvg: Double = 0.0
-        for(accel in this.collectionData.accelerometer)
-            accelAvg += accel.accelX + accel.accelY + accel.accelZ
-        accelAvg /= this.collectionData.accelerometer.size
-        var accelVar: Double = 0.0
-        for(accel in this.collectionData.accelerometer) {
-            var p: Double = ((accel.accelX + accel.accelY + accel.accelZ) - accelAvg)
-            var q: Double = p * p
-            accelVar += q
+        if(this.useAccelerometer) {
+            // Search all times were acceleration differs greater than variance from average
+            var accelAvg: Double = 0.0
+            for(accel in this.collectionData.accelerometer)
+                accelAvg += accel.accelX + accel.accelY + accel.accelZ
+            accelAvg /= this.collectionData.accelerometer.size
+            var accelVar: Double = 0.0
+            for(accel in this.collectionData.accelerometer) {
+                var p: Double = ((accel.accelX + accel.accelY + accel.accelZ) - accelAvg)
+                var q: Double = p * p
+                accelVar += q
+            }
+            if(this.collectionData.location.size < 2)
+                throw RuntimeException("For the variance calculation we need at least two accelerometer-points (otherwise divide by zero)!")
+            accelVar /= this.collectionData.accelerometer.size - 1
+            this.log.d("Accelerometer average $accelAvg with variance of $accelVar")
+            for(accelId in this.collectionData.accelerometer.indices) {
+                var accel = this.collectionData.accelerometer[accelId]
+                var p: Double = (accel.accelX + accel.accelY + accel.accelZ).toDouble()
+                progressNotification("Acceleration", accelId / this.collectionData.accelerometer.size.toDouble())
+                if(accelAvg + accelVar > p && accelAvg - accelVar < p)
+                    continue
+                sectionTimes.add(Date(accel.time))
+                this.log.d("Accelerometer triggered new section at ${accel.time} with $p")
+            }
         }
-        if(this.collectionData.location.size < 2)
-            throw RuntimeException("For the variance calculation we need at least two accelerometer-points (otherwise divide by zero)!")
-        accelVar /= this.collectionData.accelerometer.size - 1
-        this.log.d("Accelerometer average $accelAvg with variance of $accelVar")
-        for(accelId in this.collectionData.accelerometer.indices) {
-            var accel = this.collectionData.accelerometer[accelId]
-            var p: Double = (accel.accelX + accel.accelY + accel.accelZ).toDouble()
-            progressNotification("Acceleration", accelId / this.collectionData.accelerometer.size.toDouble())
-            if(accelAvg + accelVar > p && accelAvg - accelVar < p)
-                continue
-            sectionTimes.add(Date(accel.time))
-            this.log.d("Accelerometer triggered new section at ${accel.time} with $p")
-        }
-        // Use Geocoder to trigger new segments on roads
-        if(Geocoder.isPresent()) {
-            var geocoder = Geocoder(this.context)
-            var currentAddressLine = ""
-            for (locationId in this.collectionData.location.indices) {
-                var location = this.collectionData.location[locationId]
-                var addresses = geocoder.getFromLocation(location.locLat, location.locLon, 1)
-                if(addresses != null && addresses.isNotEmpty()) {
-                    var address = addresses[0]
-                    if(address.maxAddressLineIndex >= 0) {
-                        var line = address.getAddressLine(0)
-                        // Every address is more or less like this: "Sutthauser Str. 52, 49124 Georgsmarienhütte, Germany"
-                        // I think everything is relevant - except the house number -> e.g. if the street changes we want to know that!
-                        var simpleLine = line.replace(Regex("(.+)(\\s\\d+)(,\\s\\d+)"), "$1$3")
-                        if(simpleLine != currentAddressLine) {
-                            this.log.d("Next location is at \"$simpleLine\" (from \"$line\") at ${location.time}")
-                            sectionTimes.add(Date(location.time))
-                            currentAddressLine = simpleLine
+        if(this.useGeocoding) {
+            // Use Geocoder to trigger new segments on roads
+            if(Geocoder.isPresent()) {
+                val geocoder = Geocoder(this.context)
+                var currentAddressLine = ""
+                for (locationId in this.collectionData.location.indices) {
+                    val location = this.collectionData.location[locationId]
+                    val addresses = geocoder.getFromLocation(location.locLat, location.locLon, 1)
+                    if(addresses != null && addresses.isNotEmpty()) {
+                        val address = addresses[0]
+                        if(address.maxAddressLineIndex >= 0) {
+                            val line = address.getAddressLine(0)
+                            // Every address is more or less like this: "Sutthauser Str. 52, 49124 Georgsmarienhütte, Germany"
+                            // I think everything is relevant - except the house number -> e.g. if the street changes we want to know that!
+                            val simpleLine = line.replace(Regex("(.+)(\\s\\d+)(,\\s\\d+)"), "$1$3")
+                            if(simpleLine != currentAddressLine) {
+                                this.log.d("Next location is at \"$simpleLine\" (from \"$line\") at ${location.time}")
+                                sectionTimes.add(Date(location.time))
+                                currentAddressLine = simpleLine
+                            }
                         }
                     }
+                    progressNotification("Geocoding", locationId / this.collectionData.location.size.toDouble())
                 }
-                progressNotification("Geocoding", locationId / this.collectionData.location.size.toDouble())
-            }
-        } else
-            this.log.w("Geocoder is not available!")
+            } else
+                this.log.w("Geocoder is not available!")
+        }
+
+        if(sectionTimes.isEmpty())
+            this.log.w("No segments could be found - no criteria yielded any results!r")
 
         progressNotification("Sort", -1.0)
         sectionTimes = ArrayList(sectionTimes.sorted())

@@ -101,6 +101,20 @@
                 android:checked="true"
                 android:text="Show estimated locations" />
 
+            <Switch
+                android:id="@+id/analysisUseAccelerometer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Use Accelerometer" />
+
+            <Switch
+                android:id="@+id/analysisUseGeocoding"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Use Geocoding" />
+
             <Button
                 android:id="@+id/triggerAnalysisNow"
                 android:layout_width="match_parent"

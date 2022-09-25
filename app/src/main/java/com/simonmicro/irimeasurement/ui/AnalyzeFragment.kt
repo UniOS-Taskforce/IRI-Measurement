@@ -33,6 +33,8 @@ import kotlin.collections.ArrayList
 class AnalyzeFragment : Fragment() {
     private lateinit var mapShowSegmentMarkers: Switch
     private lateinit var mapShowIntermediateMarkers: Switch
+    private lateinit var analysisUseAccelerometer: Switch
+    private lateinit var analysisUseGeocoding: Switch
     private lateinit var map: MapView
     private var mapExpanded: Boolean = true
     private val log = com.simonmicro.irimeasurement.util.Log(AnalyzeFragment::class.java.name)
@@ -74,6 +76,8 @@ class AnalyzeFragment : Fragment() {
         var view: View = inflater.inflate(R.layout.fragment_analyze, container, false)
         this.mapShowSegmentMarkers = view.findViewById(R.id.mapShowSegmentMarkers)
         this.mapShowIntermediateMarkers = view.findViewById(R.id.mapShowIntermediateMarkers)
+        this.analysisUseAccelerometer = view.findViewById(R.id.analysisUseAccelerometer)
+        this.analysisUseGeocoding = view.findViewById(R.id.analysisUseGeocoding)
 
         // Init valid UserAgent for the map (otherwise tiles won't load)
         val s = BuildConfig.APPLICATION_ID + "@" + BuildConfig.VERSION_NAME
@@ -172,7 +176,7 @@ class AnalyzeFragment : Fragment() {
     fun startAnalysis(uuid: UUID?) {
         val now: UUID? = uuid?: this.lastAnalysisUUID
         if(now != null) {
-            this.activeAnalysisThread = AnalysisThread(requireView(), this, now)
+            this.activeAnalysisThread = AnalysisThread(requireView(), this, now, useAccelerometer = this.analysisUseAccelerometer.isChecked, useGeocoding = this.analysisUseGeocoding.isChecked)
             this.activeAnalysisThread!!.start()
             lastAnalysisUUID = now
         } else

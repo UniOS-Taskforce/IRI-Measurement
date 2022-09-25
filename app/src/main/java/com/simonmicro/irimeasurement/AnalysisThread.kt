@@ -8,7 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
 
-class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var collectionUUID: UUID): Thread() {
+class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var collectionUUID: UUID, private var useAccelerometer: Boolean, private var useGeocoding: Boolean): Thread() {
     private val log = com.simonmicro.irimeasurement.util.Log(AnalysisThread::class.java.name)
     private var aStatus = AnalyzeFragment.AnalyzeStatus(false)
     private var expectedKillString = "Active analysis thread reference changed - terminating this instance!"
@@ -44,7 +44,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             // Analyze the data
             this.aStatus.workingText = "Parsing data..."
             this.pushViewUpdate(true)
-            var iriSvc = IRICalculationService(c, this.fragment.requireContext())
+            var iriSvc = IRICalculationService(collection = c, context = this.fragment.requireContext(), useAccelerometer = useAccelerometer, useGeocoding = useGeocoding)
 
             // Determine the collected segments
             this.aStatus.workingText = "Searching segments..."
