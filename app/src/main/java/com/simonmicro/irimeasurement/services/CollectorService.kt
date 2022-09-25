@@ -25,6 +25,7 @@ import com.simonmicro.irimeasurement.services.points.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayList
 
 class CollectorService(appContext: Context, workerParams: WorkerParameters): Worker(appContext, workerParams), SensorEventListener, LocationListener {
@@ -240,6 +241,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         if(this.wakelockCPU != null && this.wakelockCPU!!.isHeld)
             this.wakelockCPU!!.release()
         sensorManager.unregisterListener(this) // This disconnects ALL sensors!
+        TimeUnit.SECONDS.sleep(1) // Sleep a while to let all queued callbacks settle, so finishing the collection won't cause exceptions later on!
         NotificationManagerCompat.from(applicationContext).cancel(nId)
         this.collection!!.completed(this.locService!!.getLocationTags()) // May not executed because of crash, even if collection itself was successful: Finish after all inputs are stopped!
     }
