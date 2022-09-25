@@ -132,6 +132,6 @@ class GeocoderService(context: Context): Closeable {
         if(old != new)
             this.log.d("Expired ${old - new} entries")
         this.db.close()
-        this.log.d("Closed cache of $new requests after processing $reqCnt requests ($reqCachedCnt cached)")
+        this.log.d("Closed cache of $new addresses after processing $reqCnt requests ($reqCachedCnt cached)")
     }
 }
