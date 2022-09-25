@@ -66,10 +66,13 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             var segmentsProcessed: Int = 0
             var segmentsProcessedIRIAvg: Double = 0.0
             var segmentsLocations: Int = 0
+            var lastZoom = 0L
             for (i in segments.indices) {
-                if(i % 100 == 0) // Reset the zoom every 100 segments...
+                if(Date().time - lastZoom > 1000) { // Which would be one second...
                     this.fragment.resetZoom(respectUserLocation = false, animated = true)
-                var segment = segments[i]
+                    lastZoom = Date().time
+                }
+                val segment = segments[i]
                 for(location in segment.locations) {
                     if(!location.wasEstimated()) // Every real location will get a section marker!
                         this.fragment.addSegmentMarker(location)
@@ -78,10 +81,10 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                     segmentsLocations += 1
                 }
                 try {
-                    var iri: Double = iriSvc.getIRIValue(segment)
+                    val iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
                     segmentsProcessed += 1
-                    var iriStr = (Math.round(iri * 1000).toDouble() / 1000).toString()
+                    val iriStr = (Math.round(iri * 1000).toDouble() / 1000).toString()
                     this.fragment.addLineMarker(segment.locations, "IRI: $iriStr")
                     this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
                 } catch (e: Exception) {

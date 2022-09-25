@@ -92,8 +92,8 @@ class GeocoderService(context: Context): Closeable {
     private val log = com.simonmicro.irimeasurement.util.Log(GeocoderService::class.java.name)
     private val geocoder: Geocoder
     private val db: GeoCacheDBHandler
-    private var reqCnt = 0
-    private var reqCachedCnt = 0
+    private var reqCnt = 0L
+    private var reqCachedCnt = 0L
 
     init {
         this.geocoder = Geocoder(context)
