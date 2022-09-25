@@ -91,21 +91,21 @@
                 android:id="@+id/mapShowSegmentMarkers"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
+                android:checked="false"
                 android:text="Show real locations" />
 
             <Switch
                 android:id="@+id/mapShowIntermediateMarkers"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
+                android:checked="false"
                 android:text="Show estimated locations" />
 
             <Switch
                 android:id="@+id/analysisUseAccelerometer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
+                android:checked="false"
                 android:text="Use Accelerometer" />
 
             <Switch
