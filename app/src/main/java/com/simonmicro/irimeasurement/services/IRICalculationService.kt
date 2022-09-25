@@ -182,26 +182,23 @@ class IRICalculationService {
         if(this.useGeocoding) {
             // Use Geocoder to trigger new segments on roads
             if(Geocoder.isPresent()) {
-                val geocoder = Geocoder(this.context)
-                var currentAddressLine = ""
-                for (locationId in this.collectionData.location.indices) {
-                    val location = this.collectionData.location[locationId]
-                    val addresses = geocoder.getFromLocation(location.locLat, location.locLon, 1)
-                    if(addresses != null && addresses.isNotEmpty()) {
-                        val address = addresses[0]
-                        if(address.maxAddressLineIndex >= 0) {
-                            val line = address.getAddressLine(0)
+                GeocoderService(this.context).use {
+                    var currentAddressLine = ""
+                    for (locationId in this.collectionData.location.indices) {
+                        val location = this.collectionData.location[locationId]
+                        val line = it.getCachedLocation(location.locLat, location.locLon)
+                        if(line != null) {
                             // Every address is more or less like this: "Sutthauser Str. 52, 49124 Georgsmarienhütte, Germany"
                             // I think everything is relevant - except the house number -> e.g. if the street changes we want to know that!
                             val simpleLine = line.replace(Regex("(.+)(\\s\\d+)(,\\s\\d+)"), "$1$3")
-                            if(simpleLine != currentAddressLine) {
+                            if (simpleLine != currentAddressLine) {
                                 this.log.d("Next location is at \"$simpleLine\" (from \"$line\") at ${location.time}")
                                 sectionTimes.add(Date(location.time))
                                 currentAddressLine = simpleLine
                             }
                         }
+                        progressNotification("Geocoding", locationId / this.collectionData.location.size.toDouble())
                     }
-                    progressNotification("Geocoding", locationId / this.collectionData.location.size.toDouble())
                 }
             } else
                 this.log.w("Geocoder is not available!")
