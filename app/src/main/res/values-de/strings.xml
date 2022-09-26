@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="tutorial_soure_code">Quellcode</string>
+    <string name="tutorial_source_code">Quellcode</string>
     <string name="tutorial_text">TODO</string>
     <string name="bike_image_description">Fahrrad Bild</string>
     <string name="background_image_description">Hintergrund Bild</string>

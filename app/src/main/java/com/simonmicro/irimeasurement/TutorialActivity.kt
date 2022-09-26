@@ -1,6 +1,5 @@
 package com.simonmicro.irimeasurement
 
-import android.content.Context
 import android.os.Bundle
 import android.text.Html
 import android.text.method.LinkMovementMethod
@@ -17,7 +16,7 @@ class TutorialActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tutorialText).movementMethod = LinkMovementMethod.getInstance()
         val repoText = findViewById<TextView>(R.id.repositoryLink)
         repoText.movementMethod = LinkMovementMethod.getInstance()
-        repoText.text = Html.fromHtml("<a href=\"" + BuildConfig.repository + "\">" + getString(R.string.tutorial_soure_code) + "</a>")
+        repoText.text = Html.fromHtml("<a href=\"" + BuildConfig.repository + "\">" + getString(R.string.tutorial_source_code) + "</a>")
 
         findViewById<Button>(R.id.continueBtn).setOnClickListener {
             StorageService.getSkipTutorialPath().toFile().createNewFile()
