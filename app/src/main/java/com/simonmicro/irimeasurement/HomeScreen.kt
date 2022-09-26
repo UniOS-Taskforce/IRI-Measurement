@@ -12,14 +12,12 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.simonmicro.irimeasurement.databinding.ActivityHomeScreenBinding
-import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
 import kotlin.io.path.exists
 
 class HomeScreen : AppCompatActivity() {
     private lateinit var binding: ActivityHomeScreenBinding
-    private val log = com.simonmicro.irimeasurement.util.Log(HomeScreen::class.java.name)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,10 +47,8 @@ class HomeScreen : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        if(!StorageService.getSkipTutorialPath().exists())
+        if(TutorialActivity.shouldDisplayAgain())
             startActivity(Intent(this, TutorialActivity::class.java))
-        else
-            this.log.d("Found file ${StorageService.getSkipTutorialPath()} - skipping tutorial...")
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -63,8 +59,10 @@ class HomeScreen : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return if(item.itemId == R.id.home_screen_options_collections) {
-            val intent = Intent(this, CollectionManager::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, CollectionManager::class.java))
+            true
+        } else if(item.itemId == R.id.home_screen_options_show_tutorial) {
+            startActivity(Intent(this, TutorialActivity::class.java))
             true
         } else
             super.onOptionsItemSelected(item)

@@ -24,8 +24,8 @@ class StorageService {
             return context!!.filesDir.usableSpace
         }
 
-        fun getSkipTutorialPath(): Path {
-            return Path(context!!.filesDir.path, "SKIP_TUTORIAL")
+        fun getTutorialConfigPath(): Path {
+            return Path(context!!.filesDir.path, "tutorial.cfg")
         }
 
         fun getBytesBetterString(bytes: Long): String {

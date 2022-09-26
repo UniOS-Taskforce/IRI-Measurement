@@ -45,10 +45,22 @@
             android:justificationMode="inter_word"
             android:padding="16dp"
             android:text="@string/app_name"
-            android:textColor="@color/colorOnPrimary"
+            android:textColor="@color/white"
             android:textSize="22sp"
-            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintBottom_toBottomOf="@+id/headBg"
             app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/headSubTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:justificationMode="inter_word"
+            android:padding="8dp"
+            android:text="@string/loading"
+            android:textColor="@color/lightgrey"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="@+id/headBg"
+            app:layout_constraintTop_toTopOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ScrollView
