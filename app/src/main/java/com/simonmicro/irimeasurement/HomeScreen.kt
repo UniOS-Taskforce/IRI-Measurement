@@ -30,7 +30,6 @@ class HomeScreen : AppCompatActivity() {
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
         LocationService.snackbarTarget = this.findViewById(R.id.container)
-        binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME
 
         // Prepare the UI
         supportActionBar!!.show()
