@@ -11,6 +11,7 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.work.ExistingWorkPolicy
@@ -48,7 +49,7 @@ class CollectFragment : Fragment() {
     private var serviceLastLocAccu: TextView? = null
     private var serviceLastLocDir: TextView? = null
     private var serviceLoad: ProgressBar? = null
-    private var activeWarn: LinearLayout? = null
+    private var activeWarn: ScrollView? = null
     private var done: Boolean = false
 
     companion object {
@@ -162,22 +163,22 @@ class CollectFragment : Fragment() {
     ): View {
         var view: View = inflater.inflate(R.layout.fragment_collect, container, false)
 
-        this.serviceStatus = view.findViewById<TextView>(R.id.collectorStatus)
-        this.serviceUptime = view.findViewById<TextView>(R.id.collectorUptime)
-        this.serviceCollectionId = view.findViewById<TextView>(R.id.collectionId)
-        this.serviceFreeSpace = view.findViewById<TextView>(R.id.freeSpace)
-        this.serviceLastTime = view.findViewById<TextView>(R.id.collectorLocTime)
-        this.serviceLastAccel = view.findViewById<TextView>(R.id.collectorAccel)
-        this.serviceLastMag = view.findViewById<TextView>(R.id.collectorMag)
-        this.serviceLastGrav = view.findViewById<TextView>(R.id.collectorGrav)
-        this.serviceLastTemp = view.findViewById<TextView>(R.id.collectorTemp)
-        this.serviceLastPress = view.findViewById<TextView>(R.id.collectorPress)
-        this.serviceLastHumi = view.findViewById<TextView>(R.id.collectorHumi)
-        this.serviceLastLoc = view.findViewById<TextView>(R.id.collectorLoc)
-        this.serviceLastLocAccu = view.findViewById<TextView>(R.id.collectorLocAccu)
-        this.serviceLastLocDir = view.findViewById<TextView>(R.id.collectorLocDir)
-        this.serviceLoad = view.findViewById<ProgressBar>(R.id.serviceProgressBar)
-        this.activeWarn = view.findViewById<LinearLayout>(R.id.keepActiveWarning)
+        this.serviceStatus = view.findViewById(R.id.collectorStatus)
+        this.serviceUptime = view.findViewById(R.id.collectorUptime)
+        this.serviceCollectionId = view.findViewById(R.id.collectionId)
+        this.serviceFreeSpace = view.findViewById(R.id.freeSpace)
+        this.serviceLastTime = view.findViewById(R.id.collectorLocTime)
+        this.serviceLastAccel = view.findViewById(R.id.collectorAccel)
+        this.serviceLastMag = view.findViewById(R.id.collectorMag)
+        this.serviceLastGrav = view.findViewById(R.id.collectorGrav)
+        this.serviceLastTemp = view.findViewById(R.id.collectorTemp)
+        this.serviceLastPress = view.findViewById(R.id.collectorPress)
+        this.serviceLastHumi = view.findViewById(R.id.collectorHumi)
+        this.serviceLastLoc = view.findViewById(R.id.collectorLoc)
+        this.serviceLastLocAccu = view.findViewById(R.id.collectorLocAccu)
+        this.serviceLastLocDir = view.findViewById(R.id.collectorLocDir)
+        this.serviceLoad = view.findViewById(R.id.serviceProgressBar)
+        this.activeWarn = view.findViewById(R.id.keepActiveWarning)
         this.serviceControlButton = view.findViewById(R.id.button)
         this.serviceControlButton!!.setOnClickListener {
             if(this.getServiceUIState()) {
