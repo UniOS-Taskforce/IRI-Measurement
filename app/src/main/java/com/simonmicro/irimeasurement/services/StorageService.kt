@@ -5,8 +5,10 @@ import android.os.storage.StorageManager
 import androidx.core.content.getSystemService
 import com.simonmicro.irimeasurement.Collection
 import java.io.File
+import java.nio.file.Path
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.io.path.Path
 
 class StorageService {
     companion object {
@@ -20,6 +22,10 @@ class StorageService {
 
         fun getFreeSpaceBytes(): Long {
             return context!!.filesDir.usableSpace
+        }
+
+        fun getSkipTutorialPath(): Path {
+            return Path(context!!.filesDir.path, "SKIP_TUTORIAL")
         }
 
         fun getBytesBetterString(bytes: Long): String {

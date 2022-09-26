@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tutorial_soure_code">Quellcode</string>
+    <string name="tutorial_text">TODO</string>
+    <string name="bike_image_description">Fahrrad Bild</string>
+    <string name="background_image_description">Hintergrund Bild</string>
+    <string name="tutorial_proceed">Fortfahren</string>
+    <string name="title_analyze">Analyse</string>
+    <string name="title_collect">Sammeln</string>
+    <string name="service_notification_title">Sammler Status</string>
+    <string name="service_notification_channel_description">TODO</string>
+    <string name="service_notification_channel_title">TODO</string>
+</resources>

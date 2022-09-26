@@ -21,6 +21,7 @@ android {
         targetSdk 33
         versionCode 16
         versionName "1.5.5-${getGitHash()}"
+        buildConfigField "String", "repository", '"https://github.com/UniOS-Taskforce/IRI-Measurement"'
     }
 
     buildTypes {

@@ -1,11 +1,17 @@
 <resources>
-    <string name="app_name">IRI Measurement</string>
-    <string name="app_title">International Roughness Index</string>
-    <string name="service_id">collector</string>
-    <string name="service_notification_channel_id">service_notify_channel</string>
+    <string name="app_name" translatable="false">IRI Measurement</string>
+    <string name="app_title" translatable="false">International Roughness Index</string>
+    <string name="service_id" translatable="false">collector</string>
+    <string name="service_notification_channel_id" translatable="false">service_notify_channel</string>
     <string name="service_notification_channel_title">Collector Service Notifications</string>
     <string name="service_notification_channel_description">Used to communicate the collector service status and health during activity.</string>
     <string name="service_notification_title">Collector Status</string>
     <string name="title_collect">Collect</string>
     <string name="title_analyze">Analyze</string>
+    <string name="tutorial_proceed">Proceed</string>
+    <string name="background_image_description">Background Image</string>
+    <string name="bike_image_description">Bike Image</string>
+    <string name="tutorial_text">Welcome to the IRI Measurement application!\n\nThe condition of the bicycle lanes is among the most frequently cited criticisms by both recreational and everyday cyclists [RVP2030, p.9].Therefore, an automated measurement tool that is as objective as possible is needed in order to evaluate the surface condition of bicycle lanes.\n\nIn recent years, various evaluation metrics for measuring surface roughness have been proposed. One of them is the <i>International Roughness Index</i> (IRI). The research paper <a href="https://www.mdpi.com/1424-8220/18/3/914">Zang et al. (2018)</a> assessed road surface roughness by calculating the IRI based on GPS and Accelerometer sensors on bicycle-mounted smartphones, which was implemented here.\n\n<i>Please note, since this application is approximating the calculation of the IRI values, the results obtained may not fit the range of values used in the literature and thus may not fit the usual classification of values.</i>\n\n<b>Please be extremely careful while using this application, do not get distracted by it, do not operate it while driving and always pay attention to the surrounding traffic! It is best to perform your collections on roads with little or no traffic!</b>\n\nTo use this application, you have to start creating so called <i>collection</i>, which contain a recording of your locations and accelerometer sensor values over time. These collections can also be imported and exported to be analysed with external tools. For convenience also a simple analysis tool is included with this application, which can be found inside the <i>Analysis</i> tab. Please note, that initial analysis of the geocoded-values may take a while if performed the first time.</string>
+    <string name="tutorial_soure_code">Source Code</string>
+    <string name="loading" translatable="false">...</string>
 </resources>

@@ -12,11 +12,14 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.simonmicro.irimeasurement.databinding.ActivityHomeScreenBinding
+import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
+import kotlin.io.path.exists
 
 class HomeScreen : AppCompatActivity() {
     private lateinit var binding: ActivityHomeScreenBinding
+    private val log = com.simonmicro.irimeasurement.util.Log(HomeScreen::class.java.name)
 
     companion object {
         var locService: LocationService? = null // Only to be used by the fragments
@@ -33,7 +36,7 @@ class HomeScreen : AppCompatActivity() {
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
         LocationService.snackbarTarget = this.findViewById(R.id.container)
-        HomeScreen.locService = LocationService(this, this)
+        locService = LocationService(this, this)
         binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME
 
         // Prepare the UI
@@ -50,6 +53,11 @@ class HomeScreen : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
+        if(!StorageService.getSkipTutorialPath().exists())
+            startActivity(Intent(this, TutorialActivity::class.java))
+        else
+            this.log.d("Found file ${StorageService.getSkipTutorialPath()} - skipping tutorial...")
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -69,7 +77,7 @@ class HomeScreen : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        HomeScreen.locService!!.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        locService!!.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
     }
 
     override fun onDestroy() {
