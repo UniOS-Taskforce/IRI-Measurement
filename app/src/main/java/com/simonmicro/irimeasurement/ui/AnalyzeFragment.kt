@@ -9,10 +9,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.marginBottom
 import androidx.fragment.app.Fragment
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.simonmicro.irimeasurement.*
+import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
 import com.simonmicro.irimeasurement.services.points.LocationPoint
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +38,7 @@ class AnalyzeFragment : Fragment() {
     private lateinit var analysisUseAccelerometer: Switch
     private lateinit var analysisUseGeocoding: Switch
     private lateinit var map: MapView
+    private lateinit var locService: LocationService
     private var mapExpanded: Boolean = true
     private val log = com.simonmicro.irimeasurement.util.Log(AnalyzeFragment::class.java.name)
     private var done: Boolean = false
@@ -47,10 +50,10 @@ class AnalyzeFragment : Fragment() {
     var activeAnalysisThread: AnalysisThread? = null
 
     fun updateAnalyzeStatus(view: View, aStatus: AnalyzeStatus) {
-        var pContainer: LinearLayout = view.findViewById(R.id.analyzeProgressContainer)
-        var pBar: ProgressBar = view.findViewById(R.id.analyzeProgress)
-        var pText: TextView = view.findViewById(R.id.analyzeProgressDetails)
-        var dText: TextView = view.findViewById(R.id.analyzeDetails)
+        val pContainer: LinearLayout = view.findViewById(R.id.analyzeProgressContainer)
+        val pBar: ProgressBar = view.findViewById(R.id.analyzeProgress)
+        val pText: TextView = view.findViewById(R.id.analyzeProgressDetails)
+        val dText: TextView = view.findViewById(R.id.analyzeDetails)
         if(aStatus.working) {
             pContainer.visibility = LinearLayout.VISIBLE
             if(aStatus.workingProgress != -1) {
@@ -73,11 +76,12 @@ class AnalyzeFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        var view: View = inflater.inflate(R.layout.fragment_analyze, container, false)
+        val view: View = inflater.inflate(R.layout.fragment_analyze, container, false)
         this.mapShowSegmentMarkers = view.findViewById(R.id.mapShowSegmentMarkers)
         this.mapShowIntermediateMarkers = view.findViewById(R.id.mapShowIntermediateMarkers)
         this.analysisUseAccelerometer = view.findViewById(R.id.analysisUseAccelerometer)
         this.analysisUseGeocoding = view.findViewById(R.id.analysisUseGeocoding)
+        this.locService = LocationService(this.requireContext(), this.requireActivity() as AppCompatActivity)
 
         // Init valid UserAgent for the map (otherwise tiles won't load)
         val s = BuildConfig.APPLICATION_ID + "@" + BuildConfig.VERSION_NAME
@@ -91,12 +95,12 @@ class AnalyzeFragment : Fragment() {
         val mapDefaultMargin: Int = map.marginBottom
 
         // Add map resize (with animation) to the button
-        var resizeButtn: FloatingActionButton = view.findViewById<FloatingActionButton>(R.id.toggleLayoutButton)
+        val resizeButtn: FloatingActionButton = view.findViewById<FloatingActionButton>(R.id.toggleLayoutButton)
         resizeButtn.setOnClickListener {
             this.mapExpanded = !this.mapExpanded
 
-            var minHeight: Int = mapDefaultMargin
-            var maxHeight: Int = view.measuredHeight - mapDefaultMargin
+            val minHeight: Int = mapDefaultMargin
+            val maxHeight: Int = view.measuredHeight - mapDefaultMargin
             val valueAnimator: ValueAnimator
             if(this.mapExpanded) {
                 valueAnimator = ValueAnimator.ofInt(minHeight, maxHeight)
@@ -117,7 +121,7 @@ class AnalyzeFragment : Fragment() {
         }
 
         val that = this
-        if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
+        if(this.locService.requestPermissionsIfNecessary(this.requireActivity())) {
             // Oh, we already got all permissions? So, let's display the users location live on the map!
             var lastUserLocation: Location? = null
             this.done = false
@@ -125,7 +129,7 @@ class AnalyzeFragment : Fragment() {
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
                     if(that.done) return
-                    var loc = HomeScreen.locService!!.getLastLocation()
+                    val loc = that.locService.getLastLocation()
                     if(lastUserLocation == null || lastUserLocation != loc) {
                         log.d("Pushing current location to map: $loc")
                         if (loc != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
@@ -189,7 +193,7 @@ class AnalyzeFragment : Fragment() {
     }
 
     private fun initAnalyzeProperties() {
-        var l = StorageService.listCollections()
+        val l = StorageService.listCollections()
         if(l.size == 0) {
             analyzeNoCollection.visibility = TextView.VISIBLE
             analyzeProperties.visibility = LinearLayout.GONE
@@ -250,11 +254,11 @@ class AnalyzeFragment : Fragment() {
     private var lineColors = arrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.DKGRAY)
     private var lineColorsIndex: Int = 0
     fun addLineMarker(locations: List<LocationPoint>, title: String?) {
-        var points = ArrayList<GeoPoint>()
+        val points = ArrayList<GeoPoint>()
         for(location in locations)
             points.add(GeoPoint(location.locLat, location.locLon))
         otherMarkers.addAll(points)
-        var line = Polyline(map)
+        val line = Polyline(map)
         line.setPoints(points)
         if(title != null)
             line.title = title

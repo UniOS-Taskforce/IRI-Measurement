@@ -13,6 +13,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -21,6 +22,7 @@ import androidx.work.WorkManager
 import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.HomeScreen
 import com.simonmicro.irimeasurement.R
+import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +35,7 @@ fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
 class CollectFragment : Fragment() {
     private val log = com.simonmicro.irimeasurement.util.Log(CollectFragment::class.java.name)
+    private lateinit var locService: LocationService
     private var serviceControlButton: Button? = null
     private var serviceStatus: TextView? = null
     private var serviceUptime: TextView? = null
@@ -162,6 +165,7 @@ class CollectFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         var view: View = inflater.inflate(R.layout.fragment_collect, container, false)
+        this.locService = LocationService(this.requireContext(), this.requireActivity() as AppCompatActivity)
 
         this.serviceStatus = view.findViewById(R.id.collectorStatus)
         this.serviceUptime = view.findViewById(R.id.collectorUptime)
@@ -184,7 +188,7 @@ class CollectFragment : Fragment() {
             if(this.getServiceUIState()) {
                 this.log.i("Stopping collector...")
                 WorkManager.getInstance(this.requireContext()).cancelUniqueWork(getString(R.string.service_id))
-            } else if(HomeScreen.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
+            } else if(this.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
                 this.log.i("Starting collector...")
                 WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
                     getString(R.string.service_id),

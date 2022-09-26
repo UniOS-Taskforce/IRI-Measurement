@@ -21,10 +21,6 @@ class HomeScreen : AppCompatActivity() {
     private lateinit var binding: ActivityHomeScreenBinding
     private val log = com.simonmicro.irimeasurement.util.Log(HomeScreen::class.java.name)
 
-    companion object {
-        var locService: LocationService? = null // Only to be used by the fragments
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.requestFeature(Window.FEATURE_ACTION_BAR)
@@ -36,7 +32,6 @@ class HomeScreen : AppCompatActivity() {
         binding = ActivityHomeScreenBinding.inflate(layoutInflater)
         setContentView(binding.root)
         LocationService.snackbarTarget = this.findViewById(R.id.container)
-        locService = LocationService(this, this)
         binding.overlayText.text = BuildConfig.APPLICATION_ID + " v" + BuildConfig.VERSION_NAME
 
         // Prepare the UI
@@ -77,13 +72,12 @@ class HomeScreen : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        locService!!.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        LocationService.onRequestPermissionsResult(this, requestCode, permissions, grantResults) // Forward it as needed
     }
 
     override fun onDestroy() {
         super.onDestroy()
         // Clear static fields
         LocationService.snackbarTarget = null
-        locService = null
     }
 }

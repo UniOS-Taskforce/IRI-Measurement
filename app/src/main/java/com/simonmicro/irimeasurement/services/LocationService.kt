@@ -18,6 +18,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ResolvableApiException
@@ -27,7 +28,7 @@ import com.simonmicro.irimeasurement.RequestCodes
 import java.lang.Math.min
 import java.util.concurrent.TimeUnit
 
-class LocationService(private val context: Context, activity: AppCompatActivity?) {
+class LocationService(private val context: Context, activity: FragmentActivity?) {
     private var glsClient: FusedLocationProviderClient? = null
     private var nativeManager: LocationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private val timeoutCurrentLocation = 4000
@@ -38,7 +39,12 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
     companion object {
         private val log = com.simonmicro.irimeasurement.util.Log(LocationService::class.java.name)
         private var showLocationInitMsg = true
+        private var lastRequestor: LocationService? = null
         var snackbarTarget: View? = null // onDestroy() will remove that again :)
+
+        fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+            this.lastRequestor?.onRequestPermissionsResult(activity, requestCode, permissions, grantResults)
+        }
 
         private fun showWarning(msg: String, showSnack: Boolean) {
             log.w(msg)
@@ -337,6 +343,7 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
         // Try to get them!
         if (permissionsToRequest.size > 0) {
             log.d("We are missing ${permissionsToRequest.size} permissions. Requesting...")
+            lastRequestor = this
             ActivityCompat.requestPermissions(activity, permissionsToRequest.toTypedArray(), RequestCodes.REQUEST_PERMISSIONS_GRANT)
             return false
         }
@@ -346,7 +353,8 @@ class LocationService(private val context: Context, activity: AppCompatActivity?
     /*
      * Please make sure to forward the callback to your activity back to here!
      */
-    fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    private fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        lastRequestor = null
         if(requestCode != RequestCodes.REQUEST_PERMISSIONS_GRANT)
             return
         val permissionsToRequest = ArrayList<String>()
