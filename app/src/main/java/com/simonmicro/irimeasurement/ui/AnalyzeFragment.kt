@@ -126,18 +126,22 @@ class AnalyzeFragment : Fragment() {
             var lastUserLocation: Location? = null
             this.done = false
             val handler = Handler()
+            var locationFailureCount = 0
             val runnableCode: Runnable = object : Runnable {
                 override fun run() {
                     if(that.done) return
-                    val loc = that.locService.getLastLocation()
+                    val loc = that.locService.getLastLocation(locationFailureCount == 0)
                     if(lastUserLocation == null || lastUserLocation != loc) {
                         log.d("Pushing current location to map: $loc")
-                        if (loc != null && !that.done) // Also respect done flag here, as this task may completes after the view switched
+                        if (loc != null && !that.done) { // Also respect done flag here, as this task may completes after the view switched
                             that.showUserLocation(loc.latitude, loc.longitude)
-                        if(lastUserLocation == null) // Only first time: Reset zoom
-                            that.resetZoom(respectUserLocation = true, animated = false)
-                        lastUserLocation = loc
+                            locationFailureCount = 0
+                            if(lastUserLocation == null) // Only first time: Reset zoom
+                                that.resetZoom(respectUserLocation = true, animated = false)
+                        } else
+                            locationFailureCount += 1
                     }
+                    lastUserLocation = loc
                     handler.postDelayed(this, 1000)
                 }
             }
