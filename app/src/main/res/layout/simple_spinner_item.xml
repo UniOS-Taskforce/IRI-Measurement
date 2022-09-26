@@ -6,4 +6,5 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:padding="8dp"
-    android:ellipsize="marquee" />
+    android:ellipsize="marquee"
+    android:textColor="?attr/colorOnBackground" />

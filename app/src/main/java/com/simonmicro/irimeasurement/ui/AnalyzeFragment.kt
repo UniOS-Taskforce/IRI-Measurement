@@ -146,7 +146,7 @@ class AnalyzeFragment : Fragment() {
         collectionsArrayAdapter = ArrayAdapter(view.context, R.layout.simple_spinner_item, collectionOptions)
         collectionsArrayAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
 
-        var spinner = view.findViewById<Spinner>(R.id.spinner)
+        val spinner = view.findViewById<Spinner>(R.id.spinner)
         spinner.adapter = collectionsArrayAdapter
         spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
