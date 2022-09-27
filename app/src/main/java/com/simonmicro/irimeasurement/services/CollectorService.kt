@@ -9,12 +9,14 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.location.Location
 import android.location.LocationListener
+import android.os.Bundle
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.ForegroundInfo
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import com.google.android.gms.location.LocationAvailability
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
 import com.simonmicro.irimeasurement.BuildConfig
@@ -57,6 +59,10 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             super.onLocationResult(lRes)
             for(loc: Location in lRes.locations)
                 this.service.saveLocation(loc, false)
+        }
+
+        override fun onLocationAvailability(p0: LocationAvailability) {
+            // Nope
         }
     }
     private var locCallback: CollectorLocationCallback = CollectorLocationCallback(this)
@@ -295,6 +301,18 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             .setOnlyAlertOnce(true) // Silence on repeated updates!
 
         return ForegroundInfo(nId, this.notificationBuilder!!.build())
+    }
+
+    override fun onProviderDisabled(provider: String) {
+        // Nope
+    }
+
+    override fun onProviderEnabled(provider: String) {
+        // Nope
+    }
+
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+        // Nope
     }
 
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
