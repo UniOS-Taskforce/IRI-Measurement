@@ -43,7 +43,7 @@ class GeocoderService(context: Context): Closeable {
         }
     }
 
-    inner class GeoCacheDBHandler(context: Context): SQLiteOpenHelper(context, "geocoder", null, BuildConfig.VERSION_CODE) {
+    inner class GeoCacheDBHandler(context: Context): SQLiteOpenHelper(context, "geocoder", null, 30) {
         private val tableName = "cache"
         private val columnNameTime = "time"
         private val columnNameLatitude = "lat"
