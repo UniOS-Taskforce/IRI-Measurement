@@ -1,9 +1,9 @@
 package com.simonmicro.irimeasurement.services.points
 
-abstract class DataPoint {
+abstract class DataPoint(time: Long?) {
     var time: Long
 
-    constructor(time: Long?) {
+    init {
         this.time = time?: System.currentTimeMillis()
     }
 

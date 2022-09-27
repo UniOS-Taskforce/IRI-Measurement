@@ -9,7 +9,7 @@ import com.simonmicro.irimeasurement.R
 
 class CollectionViewAdapter(context: Context, arrayList: ArrayList<CollectionView>?) : ArrayAdapter<CollectionView?>(context, 0, arrayList!! as List<CollectionView?>) {
     companion object {
-        val inflatorId = R.layout.collection_view
+        const val inflatorId = R.layout.collection_view
     }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {

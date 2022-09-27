@@ -1,17 +1,102 @@
 <resources>
-    <string name="app_name" translatable="false">IRI Measurement</string>
+    <string name="app_name">IRI Measurement</string>
     <string name="app_title" translatable="false">International Roughness Index</string>
     <string name="service_id" translatable="false">collector</string>
-    <string name="service_notification_channel_id" translatable="false">service_notify_channel</string>
-    <string name="service_notification_channel_title">Collector Service Notifications</string>
-    <string name="service_notification_channel_description">Used to communicate the collector service status and health during activity.</string>
-    <string name="service_notification_title">Collector Status</string>
+    <string name="notification_channel_id" translatable="false">service_notify_channel</string>
+    <string name="notification_channel_title">Collector Notifications</string>
+    <string name="notification_channel_description">Used to communicate the collector service status and health during activity.</string>
+    <string name="notification_title">Collector Status</string>
     <string name="title_collect">Collect</string>
     <string name="title_analyze">Analyze</string>
     <string name="tutorial_proceed">Proceed</string>
     <string name="background_image_description">Background Image</string>
     <string name="bike_image_description">Bike Image</string>
     <string name="tutorial_text">Welcome to the IRI Measurement application!\n\nThe condition of the bicycle lanes is among the most frequently cited criticisms by both recreational and everyday cyclists [RVP2030, p.9].Therefore, an automated measurement tool that is as objective as possible is needed in order to evaluate the surface condition of bicycle lanes.\n\nIn recent years, various evaluation metrics for measuring surface roughness have been proposed. One of them is the <i>International Roughness Index</i> (IRI). The research paper <a href="https://www.mdpi.com/1424-8220/18/3/914">Zang et al. (2018)</a> assessed road surface roughness by calculating the IRI based on GPS and Accelerometer sensors on bicycle-mounted smartphones, which was implemented here. Furthermore, more data is collected than currently used in the analysis (pressure, humidity and so on…) to allow later expansion with additional parameters.\n\n<i>Please note, since this application is approximating the calculation of the IRI values, the results obtained may not fit the range of values used in the literature and thus may not fit the usual classification of values.</i>\n\n<b>Please be extremely careful while using this application, do not get distracted by it, do not operate it while driving and always pay attention to the surrounding traffic! It is best to perform your collections on roads with little or no traffic!</b>\n\nTo use this application, you have to start creating so called <i>collection</i>, which contain a recording of your locations and accelerometer sensor values over time. These collections can also be imported and exported to be analysed with external tools. For convenience also a simple analysis tool is included with this application, which can be found inside the <i>Analysis</i> tab. Please note, that initial analysis of the geocoded-values may take a while if performed the first time.</string>
-    <string name="tutorial_source_code">Source Code</string>
+    <string name="tutorial_source_code">Source Code of this Application</string>
     <string name="loading" translatable="false">...</string>
+    <string name="finished">Finished</string>
+    <string name="crashed">Crashed</string>
+    <string name="stopped">Stopped</string>
+    <string name="running">Running…</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
+    <string name="warning_icon_description">Warning Icon</string>
+    <string name="save_description">Save Button</string>
+    <string name="delete_description">Delete Button</string>
+    <string name="resize_btn">Resize Map</string>
+    <string name="no_collections">No collection to analyze available.</string>
+    <string name="show_locations">Show real locations</string>
+    <string name="show_estimations">Show estimated locations</string>
+    <string name="use_accel">Use Accelerometer</string>
+    <string name="use_geocode">Use Geocoding</string>
+    <string name="apply_changes">Apply changes</string>
+    <string name="select_collection">Select Collection</string>
+    <string name="collector_status">Collector Status</string>
+    <string name="none" translatable="false">-</string>
+    <string name="remaining_space">Remaining Space</string>
+    <string name="humidity">Humidity</string>
+    <string name="pressure">Pressure</string>
+    <string name="temperature">Temperature</string>
+    <string name="gravity">Gravity</string>
+    <string name="magnetometer">Magnetometer</string>
+    <string name="accelerometer">Accelerometer</string>
+    <string name="location_direction">Location Direction</string>
+    <string name="location_accuracy">Location Accuracy</string>
+    <string name="location_time">Location Time</string>
+    <string name="location">Location</string>
+    <string name="collection_id">Collection ID</string>
+    <string name="collector_uptime">Collector Uptime</string>
+    <string name="warning_behavior_during_use">Please keep this activity active, until you have completed your collection - otherwise sensor data gets lost! This means, you may not lock your device, not close this application and not send it to the background. It is also recommended to enable all additional location accuracy providers available and to turn off battery optimizations for this application.</string>
+    <string name="import_collections">Import Collections</string>
+    <string name="close_view">Close View</string>
+    <string name="view_collections">View Collections</string>
+    <string name="display_tutorial">Display Tutorial</string>
+    <string name="_native">Native</string>
+    <string name="status">status</string>
+    <string name="google_ok_inaccessbile">Google Play Services are available, but inaccessible.</string>
+    <string name="google_ok">Google Play Services are used for location</string>
+    <string name="google_bad">Google Play Services are not available</string>
+    <string name="native_ok">Using native Android providers</string>
+    <string name="native_bad">Native Android providers are not available or inaccessible.</string>
+    <string name="location_unavailable">Location is currently unavailable…</string>
+    <string name="location_register_no_providers">Failed to register for location updates: No location provider available?!</string>
+    <string name="location_permission_missing">A permission for location is or was missing. The requested function is may not available.</string>
+    <string name="location_explain_title_0">Permission</string>
+    <string name="location_explain_title_multi">s</string>
+    <string name="location_explain_title_1">required</string>
+    <string name="location_explain_text">As you may already have noted, using a GEO-application will require using your PRECISE location. Please grant its usage (make sure to also allow precise location access!) - otherwise the app may won\'t be able to proceed…</string>
+    <string name="collection_snack_started">Started</string>
+    <string name="collection_snack_finished">Finished</string>
+    <string name="collection_snack_points">Points</string>
+    <string name="collection_snack_sets">Sets</string>
+    <string name="collection_snack_loca_tags">Location Tags</string>
+    <string name="collection_snack_size">Size</string>
+    <string name="collection_snack_version">Version</string>
+    <string name="collection_snack_device">Device</string>
+    <string name="collector_notification_0">Active since</string>
+    <string name="collector_notification_1">seconds and collected</string>
+    <string name="collector_notification_2">data points</string>
+    <string name="collection_manager_export_start">Starting export of</string>
+    <string name="collection_manager_export_finish">Finished export of</string>
+    <string name="collection_manager_export_failed_0">Export of</string>
+    <string name="collection_manager_export_failed_1">failed</string>
+    <string name="collection_manager_import_start">Starting import…</string>
+    <string name="collection_manager_import_finish">Finished import of</string>
+    <string name="collection_manager_import_failed">Import failed</string>
+    <string name="analysis_starting">Starting analysis…</string>
+    <string name="analysis_loading">Loading collection…</string>
+    <string name="analysis_parsing">Parsing data…</string>
+    <string name="analysis_searching">Searching segments</string>
+    <string name="analysis_calculating">Calculating IRI per segment…</string>
+    <string name="analysis_failed">Analysis failed: </string>
+    <string name="analysis_failed_reason">Failed to analyze the collection: </string>
+    <string name="analysis_segments_overall">Segments (overall)</string>
+    <string name="analysis_segments_skipped">Segments (skipped)</string>
+    <string name="analysis_segments_processed">Segments (processed)</string>
+    <string name="analysis_segments_locations">Segments locations</string>
+    <string name="analysis_segments_avg">Segments IRI (avg)</string>
+    <string name="acceleration">Acceleration</string>
+    <string name="geocoding">Geocoding</string>
+    <string name="sort">Sort</string>
+    <string name="assemble">Assemble</string>
 </resources>

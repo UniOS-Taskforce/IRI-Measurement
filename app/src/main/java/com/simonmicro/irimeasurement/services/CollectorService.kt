@@ -78,7 +78,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     var lastMagnetometerPoint: MagnetometerPoint? = null
     private var magnetometerHistory: ArrayList<MagnetometerPoint> = ArrayList()
 
-    var lastGyrometerPoint: GyrometerPoint? = null
+    private var lastGyrometerPoint: GyrometerPoint? = null
     private var gyrometerHistory: ArrayList<GyrometerPoint> = ArrayList()
 
     var lastTemperaturePoint: TemperaturePoint? = null
@@ -90,7 +90,6 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
     var lastHumidityPoint: HumidityPoint? = null
     private var humidityHistory: ArrayList<HumidityPoint> = ArrayList()
 
-    private var lastLocationObject: Location? = null
     var lastLocation: LocationPoint? = null
     private var locationHistory: ArrayList<LocationPoint> = ArrayList()
 
@@ -147,30 +146,27 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
      * This function is called on a regular basis - make sure to keep every iteration as short-as-possible
      */
     private fun loop(): Boolean {
-        var runtime: Long = (System.currentTimeMillis() - this.startTime) / 1000
+        val runtime: Long = (System.currentTimeMillis() - this.startTime) / 1000
 
         runBlocking { dataPointMutex.lock() }
-        this.updateNotificationContent(
-            "Active since " + (runtime).toString() + " seconds and collected " +
-            this.dataPointCount.toString() + " data points."
-        )
+        this.updateNotificationContent("${applicationContext.getString(R.string.collector_notification_0)} $runtime ${applicationContext.getString(R.string.collector_notification_1)} ${this.dataPointCount} ${applicationContext.getString(R.string.collector_notification_2)}.")
         val currentDataCount: Long = this.dataPointCount
         runBlocking { dataPointMutex.unlock() } // Release the lock - just in case we don't flush now
 
-        val done: Boolean = false // Use this to stop after 30 seconds: runtime > 30
+        val done = false // Use this to stop after 30 seconds: "runtime > 30"
 
         // Do we need to flush?
         if(done || (currentDataCount - this.dataPointCountOnLastFlush > this.flushTarget)) {
             runBlocking { dataPointMutex.lock() }
             // Move the current values into our task
-            var accelerometerHistoryCopy: ArrayList<AccelerometerPoint> = accelerometerHistory
-            var gravityHistoryCopy: ArrayList<GravityPoint> = gravityHistory
-            var magnetometerHistoryCopy: ArrayList<MagnetometerPoint> = magnetometerHistory
-            var gyrometerHistoryCopy: ArrayList<GyrometerPoint> = gyrometerHistory
-            var temperatureHistoryCopy: ArrayList<TemperaturePoint> = temperatureHistory
-            var pressureHistoryCopy: ArrayList<PressurePoint> = pressureHistory
-            var humidityHistoryCopy: ArrayList<HumidityPoint> = humidityHistory
-            var locationHistoryCopy: ArrayList<LocationPoint> = locationHistory
+            val accelerometerHistoryCopy: ArrayList<AccelerometerPoint> = accelerometerHistory
+            val gravityHistoryCopy: ArrayList<GravityPoint> = gravityHistory
+            val magnetometerHistoryCopy: ArrayList<MagnetometerPoint> = magnetometerHistory
+            val gyrometerHistoryCopy: ArrayList<GyrometerPoint> = gyrometerHistory
+            val temperatureHistoryCopy: ArrayList<TemperaturePoint> = temperatureHistory
+            val pressureHistoryCopy: ArrayList<PressurePoint> = pressureHistory
+            val humidityHistoryCopy: ArrayList<HumidityPoint> = humidityHistory
+            val locationHistoryCopy: ArrayList<LocationPoint> = locationHistory
             // Free current queued values by creating new instances
             this.accelerometerHistory = ArrayList()
             this.gravityHistory = ArrayList()
@@ -181,20 +177,20 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
             this.humidityHistory = ArrayList()
             this.locationHistory = ArrayList()
             runBlocking { dataPointMutex.unlock() }
-            this.collection!!.addPoints<AccelerometerPoint>(accelerometerHistoryCopy)
-            this.collection!!.addPoints<TemperaturePoint>(temperatureHistoryCopy)
-            this.collection!!.addPoints<GravityPoint>(gravityHistoryCopy)
-            this.collection!!.addPoints<GyrometerPoint>(gyrometerHistoryCopy)
-            this.collection!!.addPoints<MagnetometerPoint>(magnetometerHistoryCopy)
-            this.collection!!.addPoints<PressurePoint>(pressureHistoryCopy)
-            this.collection!!.addPoints<HumidityPoint>(humidityHistoryCopy)
-            this.collection!!.addPoints<LocationPoint>(locationHistoryCopy)
+            this.collection!!.addPoints(accelerometerHistoryCopy)
+            this.collection!!.addPoints(temperatureHistoryCopy)
+            this.collection!!.addPoints(gravityHistoryCopy)
+            this.collection!!.addPoints(gyrometerHistoryCopy)
+            this.collection!!.addPoints(magnetometerHistoryCopy)
+            this.collection!!.addPoints(pressureHistoryCopy)
+            this.collection!!.addPoints(humidityHistoryCopy)
+            this.collection!!.addPoints(locationHistoryCopy)
             this.dataPointCountOnLastFlush = currentDataCount
         }
 
         // It seems like not all devices are properly triggering the location update callback, so we need to ask explicitly from time to time
         if(this.lastLocation == null || Date().time - this.lastLocation!!.time > 5 * 1000) {
-            var loc = this.locService!!.getCurrentLocation(showWarning = false)
+            val loc = this.locService!!.getCurrentLocation(showWarning = false)
             if (loc != null)
                 this.saveLocation(loc, true)
         }
@@ -279,9 +275,9 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     private fun createNotificationChannel() {
         val importance = NotificationManager.IMPORTANCE_DEFAULT
-        val channel = NotificationChannel(applicationContext.getString(R.string.service_notification_channel_id),
-            applicationContext.getString(R.string.service_notification_channel_title), importance).apply {
-                description = applicationContext.getString(R.string.service_notification_channel_description)
+        val channel = NotificationChannel(applicationContext.getString(R.string.notification_channel_id),
+            applicationContext.getString(R.string.notification_channel_title), importance).apply {
+                description = applicationContext.getString(R.string.notification_channel_description)
             }
         // Register the channel with the system
         val notificationManager: NotificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -290,9 +286,9 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
 
     private fun createForegroundInfo(): ForegroundInfo {
         this.createNotificationChannel()
-        this.notificationBuilder = NotificationCompat.Builder(applicationContext, applicationContext.getString(R.string.service_notification_channel_id))
-            .setContentTitle(applicationContext.getString(R.string.service_notification_title))
-            .setContentText("Starting...")
+        this.notificationBuilder = NotificationCompat.Builder(applicationContext, applicationContext.getString(R.string.notification_channel_id))
+            .setContentTitle(applicationContext.getString(R.string.notification_title))
+            .setContentText(applicationContext.getString(R.string.loading))
             .setSmallIcon(R.drawable.ic_twotone_fiber_manual_record_24)
             .setOngoing(true)
             .setTimeoutAfter(this.loopExpireIn) // Just re-emit it to prevent is from removal - used to "timeout" if we crash badly

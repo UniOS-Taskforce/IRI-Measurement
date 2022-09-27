@@ -11,11 +11,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:clickable="true"
+        android:contentDescription="@string/resize_btn"
         android:src="@drawable/ic_twotone_arrow_upward_24"
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/map" />
+        app:layout_constraintTop_toBottomOf="@+id/map"
+        tools:ignore="ImageContrastCheck" />
 
     <org.osmdroid.views.MapView
         android:id="@+id/map"
@@ -40,7 +42,7 @@
             android:id="@+id/analyzeNoCollection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="No collection to analyze available." />
+            android:text="@string/no_collections" />
 
         <!-- This scroll view can be at best the maps bottom size! -->
         <ScrollView
@@ -59,7 +61,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="48dp"
-                    android:spinnerMode="dropdown" />
+                    android:spinnerMode="dropdown"
+                    android:contentDescription="@string/select_collection"/>
 
                 <LinearLayout
                     android:id="@+id/analyzeProgressContainer"
@@ -78,7 +81,7 @@
                         android:id="@+id/analyzeProgressDetails"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="..."
+                        android:text="@string/loading"
                         android:textAlignment="center"
                         android:textStyle="italic" />
 
@@ -91,41 +94,41 @@
                     android:id="@+id/analyzeDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="..." />
+                    android:text="@string/loading" />
 
                 <Switch
                     android:id="@+id/mapShowSegmentMarkers"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="false"
-                    android:text="Show real locations" />
+                    android:text="@string/show_locations" />
 
                 <Switch
                     android:id="@+id/mapShowIntermediateMarkers"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="false"
-                    android:text="Show estimated locations" />
+                    android:text="@string/show_estimations" />
 
                 <Switch
                     android:id="@+id/analysisUseAccelerometer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="false"
-                    android:text="Use Accelerometer" />
+                    android:text="@string/use_accel" />
 
                 <Switch
                     android:id="@+id/analysisUseGeocoding"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:text="Use Geocoding" />
+                    android:text="@string/use_geocode" />
 
                 <Button
                     android:id="@+id/triggerAnalysisNow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Apply changes" />
+                    android:text="@string/apply_changes" />
             </LinearLayout>
         </ScrollView>
 

@@ -29,8 +29,8 @@ class CollectionManager : AppCompatActivity() {
         setContentView(R.layout.activity_collection_manager)
 
         // Copy over the current collections into their view
-        var l: ArrayList<Collection> = StorageService.listCollections()
-        var a: ArrayList<CollectionView> = ArrayList()
+        val l: ArrayList<Collection> = StorageService.listCollections()
+        val a: ArrayList<CollectionView> = ArrayList()
         for(c: Collection in l)
             a.add(CollectionView(c, this))
 
@@ -41,7 +41,7 @@ class CollectionManager : AppCompatActivity() {
         numbersListView.onItemClickListener = OnItemClickListener { _, view, position, _ ->
             val cv: CollectionView = a[position]
             cv.collection.reload() // Update the metadata, just in case...
-            val snack: Snackbar = Snackbar.make(view, cv.collection.toSnackbarString(), Snackbar.LENGTH_LONG)
+            val snack: Snackbar = Snackbar.make(view, cv.collection.toSnackbarString(applicationContext), Snackbar.LENGTH_LONG)
             val snackText: TextView = snack.view.findViewById(com.google.android.material.R.id.snackbar_text)
             snackText.maxLines = 12
             snack.show()
@@ -81,7 +81,7 @@ class CollectionManager : AppCompatActivity() {
             try {
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Starting export of ${cv.collection.id}...",
+                    "${applicationContext.getString(R.string.collection_manager_export_start)} ${cv.collection.id}...",
                     Snackbar.LENGTH_LONG
                 ).show()
                 val out: OutputStream = this.contentResolver?.openOutputStream(uri)!!
@@ -90,14 +90,14 @@ class CollectionManager : AppCompatActivity() {
                 out.close()
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Finished export of ${cv.collection.id}",
+                    "${applicationContext.getString(R.string.collection_manager_export_finish)} ${cv.collection.id}",
                     Snackbar.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
                 this.log.e("Export of ${cv.collection.id} failed: " + e.stackTraceToString())
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Export of ${cv.collection.id} failed: " + e.message,
+                    "${applicationContext.getString(R.string.collection_manager_export_failed_0)} ${cv.collection.id} ${applicationContext.getString(R.string.collection_manager_export_failed_1)}: ${e.localizedMessage}",
                     Snackbar.LENGTH_LONG
                 ).show()
             }
@@ -119,12 +119,12 @@ class CollectionManager : AppCompatActivity() {
             try {
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Starting import...",
+                    applicationContext.getString(R.string.collection_manager_import_start),
                     Snackbar.LENGTH_LONG
                 ).show()
                 this.log.d("User wants to import $uri")
                 var uuidHint: UUID? = null
-                var uuidLength: Int = UUID.randomUUID().toString().length
+                val uuidLength: Int = UUID.randomUUID().toString().length
                 if(uri.path != null && uri.path!!.length > uuidLength + ".zip".length) {
                     try {
                         uuidHint = UUID.fromString(uri.path!!.substring(uri.path!!.length - ".zip".length - uuidLength, uri.path!!.length - ".zip".length))
@@ -137,7 +137,7 @@ class CollectionManager : AppCompatActivity() {
                 val inp: InputStream = this.contentResolver?.openInputStream(uri)!!
                 val collection: Collection = Collection.import(inp, uuidHint)
                 inp.close()
-                var newCV = CollectionView(collection, this)
+                val newCV = CollectionView(collection, this)
                 val collectionNewCount = StorageService.listCollections().size
                 // Determine if really a new collection was imported, or if an existing was updated
                 if(collectionOldCount != collectionNewCount) {
@@ -148,14 +148,14 @@ class CollectionManager : AppCompatActivity() {
                 }
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Finished import of ${collection.id}",
+                    "${applicationContext.getString(R.string.collection_manager_import_finish)} ${collection.id}",
                     Snackbar.LENGTH_LONG
                 ).show()
             } catch (e: Exception) {
                 this.log.e("Import failed: ${e.stackTraceToString()}")
                 Snackbar.make(
                     findViewById(R.id.collectionsList),
-                    "Import failed: " + e.message,
+                    "${applicationContext.getString(R.string.collection_manager_import_failed)}: ${e.localizedMessage}",
                     Snackbar.LENGTH_LONG
                 ).show()
             }

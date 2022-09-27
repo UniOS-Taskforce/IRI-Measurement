@@ -66,21 +66,21 @@ class StorageService {
 
         fun getCollectionsRoot(): File {
             this.context!!.filesDir.mkdir()
-            var ret = File(this.context!!.filesDir, "collections")
+            val ret = File(this.context!!.filesDir, "collections")
             ret.mkdir()
             return ret
         }
 
         fun getCache(): File {
             this.context!!.cacheDir.mkdir()
-            var ret = File(this.context!!.cacheDir, "collections")
+            val ret = File(this.context!!.cacheDir, "collections")
             ret.mkdir()
             return ret
         }
 
         fun listCollections(): ArrayList<Collection> {
-            var all: File = this.getCollectionsRoot()
-            var list: ArrayList<Collection> = ArrayList()
+            val all: File = this.getCollectionsRoot()
+            val list: ArrayList<Collection> = ArrayList()
             for(it: File in all.listFiles()!!) {
                 if(it.isDirectory) {
                     list.add(Collection(UUID.fromString(it.name)))

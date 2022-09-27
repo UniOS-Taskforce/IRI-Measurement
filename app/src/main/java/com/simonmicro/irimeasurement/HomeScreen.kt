@@ -14,7 +14,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.simonmicro.irimeasurement.databinding.ActivityHomeScreenBinding
 import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
-import kotlin.io.path.exists
 
 class HomeScreen : AppCompatActivity() {
     private lateinit var binding: ActivityHomeScreenBinding

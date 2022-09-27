@@ -57,10 +57,11 @@
             android:justificationMode="inter_word"
             android:padding="8dp"
             android:text="@string/loading"
-            android:textColor="@color/lightgrey"
+            android:textColor="@color/light_grey"
             android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="@+id/headBg"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:ignore="TextContrastCheck" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ScrollView

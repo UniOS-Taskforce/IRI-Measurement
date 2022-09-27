@@ -1,5 +1,6 @@
 package com.simonmicro.irimeasurement
 
+import android.content.Context
 import android.os.Build
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -43,15 +44,15 @@ class Collection(val id: UUID) {
 
         private fun fileToMeta(file: File): CollectionMeta {
             this.log.d("Loading metadata file: ${file.toPath()}")
-            return jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue<CollectionMeta>(file.readText())
+            return jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false).readValue(file.readText())
         }
 
         fun import(input: InputStream, uuidHint: UUID?): Collection {
             // Extract the .zip to a temporary path -> apps cache dir
-            var tempPath = Path(StorageService.getCache().path, UUID.randomUUID().toString())
+            val tempPath = Path(StorageService.getCache().path, UUID.randomUUID().toString())
             this.log.d("Importing to $tempPath...")
             tempPath.toFile().mkdir()
-            var inp = ZipInputStream(input)
+            val inp = ZipInputStream(input)
             var entry: ZipEntry? = inp.nextEntry
             while(entry != null) {
                 val buffer = ByteArray(bufferSize)
@@ -77,9 +78,9 @@ class Collection(val id: UUID) {
                 throw RuntimeException("The imported collection does not contain a $metaName")
             this.log.d("Loading $metaName")
             this.fileToMeta(metaFile) // If this returns, the archive could be intact!
-            var collectionUUID: UUID = uuidHint?: UUID.randomUUID()
-            var finalPath = Path(StorageService.getCollectionsRoot().path, collectionUUID.toString())
-            var finalFile = finalPath.toFile()
+            val collectionUUID: UUID = uuidHint?: UUID.randomUUID()
+            val finalPath = Path(StorageService.getCollectionsRoot().path, collectionUUID.toString())
+            val finalFile = finalPath.toFile()
             this.log.d("Moving $collectionUUID from $tempPath to $finalPath")
             if(finalFile.exists())
                 finalFile.deleteRecursively()
@@ -107,16 +108,16 @@ class Collection(val id: UUID) {
         return this.path.isDirectory()
     }
 
-    fun toSnackbarString(): String {
+    fun toSnackbarString(context: Context): String {
         return "ID: ${this.id}\n" +
-                "Started: ${this.meta.started}\n" +
-                "Finished: ${this.meta.finished}\n" +
-                "Points: ${this.meta.pointCount}\n" +
-                "Sets: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\n" +
-                "Location Tags: ${this.meta.locationTags.joinToString(prefix = "{", postfix = "}") { it }}\n" +
-                "Size: ${StorageService.getBytesBetterString(this.getSizeBytes())}\n" +
-                "Version: ${this.meta.version}\n" +
-                "Device: ${this.meta.model} (${this.meta.manufacturer})"
+                "${context.getString(R.string.collection_snack_started)}: ${this.meta.started}\n" +
+                "${context.getString(R.string.collection_snack_finished)}: ${this.meta.finished}\n" +
+                "${context.getString(R.string.collection_snack_points)}: ${this.meta.pointCount}\n" +
+                "${context.getString(R.string.collection_snack_sets)}: ${this.meta.dataSets.joinToString(prefix = "{", postfix = "}") { it }}\n" +
+                "${context.getString(R.string.collection_snack_loca_tags)}: ${this.meta.locationTags.joinToString(prefix = "{", postfix = "}") { it }}\n" +
+                "${context.getString(R.string.collection_snack_size)}: ${StorageService.getBytesBetterString(this.getSizeBytes())}\n" +
+                "${context.getString(R.string.collection_snack_version)}: ${this.meta.version}\n" +
+                "${context.getString(R.string.collection_snack_device)}: ${this.meta.model} (${this.meta.manufacturer})"
     }
 
     fun getMeta(): CollectionMeta {
@@ -169,8 +170,8 @@ class Collection(val id: UUID) {
 
     private fun addFileToZip(out: ZipOutputStream, file: File) {
         log.d("Adding file: ${file.toPath()}")
-        var fi: FileInputStream = file.inputStream()
-        var buffer = ByteArray(bufferSize)
+        val fi: FileInputStream = file.inputStream()
+        val buffer = ByteArray(bufferSize)
         val origin = BufferedInputStream(fi, bufferSize)
         val entry = ZipEntry(file.name)
         out.putNextEntry(entry)
@@ -183,7 +184,7 @@ class Collection(val id: UUID) {
 
     fun export(output: OutputStream) {
         log.d("Exporting ${this.id}...")
-        var out = ZipOutputStream(output)
+        val out = ZipOutputStream(output)
         for(file: File in this.path.toFile().listFiles()!!) {
             if(file.isFile)
                 this.addFileToZip(out, file)
@@ -195,9 +196,9 @@ class Collection(val id: UUID) {
     fun <T: DataPoint> addPoints(points: List<T>) {
         if(this.meta.finished != null)
             throw RuntimeException("You tried to add to a completed collection")
-        if(points.size == 0)
+        if(points.isEmpty())
             return
-        var out: File = Path(this.path.toString(), points[0].getName() + ".csv").toFile()
+        val out: File = Path(this.path.toString(), points[0].getName() + ".csv").toFile()
         if(!out.isFile) {
             out.appendText(points[0].getHeader() + "\n")
         }
@@ -210,8 +211,8 @@ class Collection(val id: UUID) {
     }
 
     fun <T: DataPoint> getPoints(factory: (row: List<String>?) -> T): List<T> {
-        var points: ArrayList<T> = ArrayList()
-        var pointsFile: File = Path(this.path.toString(), factory(null).getName() + ".csv").toFile()
+        val points: ArrayList<T> = ArrayList()
+        val pointsFile: File = Path(this.path.toString(), factory(null).getName() + ".csv").toFile()
         if(pointsFile.exists()) {
             // Now read the file line by line and recreate the points from it
             var readHeader = false

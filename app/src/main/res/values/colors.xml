@@ -7,6 +7,6 @@
     <color name="colorSecondaryVariant">#FF6F00</color>
     <color name="colorOnSecondary">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="lightgrey">#DEDEDE</color>
+    <color name="light_grey">#DEDEDE</color>
     <color name="black">#FF000000</color>
 </resources>

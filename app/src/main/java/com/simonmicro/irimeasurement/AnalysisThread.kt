@@ -1,5 +1,6 @@
 package com.simonmicro.irimeasurement
 
+import android.content.Context
 import android.view.View
 import com.simonmicro.irimeasurement.services.IRICalculationService
 import com.simonmicro.irimeasurement.ui.AnalyzeFragment
@@ -7,8 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.*
+import kotlin.math.roundToInt
 
-class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var collectionUUID: UUID, private var useAccelerometer: Boolean, private var useGeocoding: Boolean): Thread() {
+class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var context: Context, private var collectionUUID: UUID, private var useAccelerometer: Boolean, private var useGeocoding: Boolean): Thread() {
     private val log = com.simonmicro.irimeasurement.util.Log(AnalysisThread::class.java.name)
     private var aStatus = AnalyzeFragment.AnalyzeStatus(false)
     private var expectedKillString = "Active analysis thread reference changed - terminating this instance!"
@@ -21,7 +23,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
         if(this.onUpdate && !force)
             // We are still waiting for one update to finish...
             return
-        var that = this
+        val that = this
         this.onUpdate = true
         CoroutineScope(Dispatchers.Main).launch {
             that.fragment.updateAnalyzeStatus(view, aStatus)
@@ -32,40 +34,40 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
     override fun run() {
         super.run()
         this.aStatus.working = true
-        this.aStatus.workingText = "Starting analysis..."
+        this.aStatus.workingText = context.getString(R.string.analysis_starting)
         this.pushViewUpdate(true)
         try {
             this.fragment.clearMarkers() // Already clear the view
-            this.aStatus.workingText = "Loading collection..."
+            this.aStatus.workingText = context.getString(R.string.analysis_loading)
             this.pushViewUpdate(true)
-            var c = Collection(this.collectionUUID)
-            aStatus.resultText = c.toSnackbarString()
+            val c = Collection(this.collectionUUID)
+            aStatus.resultText = c.toSnackbarString(context)
 
             // Analyze the data
-            this.aStatus.workingText = "Parsing data..."
+            this.aStatus.workingText = context.getString(R.string.analysis_parsing)
             this.pushViewUpdate(true)
-            var iriSvc = IRICalculationService(collection = c, context = this.fragment.requireContext(), useAccelerometer = useAccelerometer, useGeocoding = useGeocoding)
+            val iriSvc = IRICalculationService(collection = c, context = this.fragment.requireContext(), useAccelerometer = useAccelerometer, useGeocoding = useGeocoding)
 
             // Determine the collected segments
-            this.aStatus.workingText = "Searching segments..."
+            this.aStatus.workingText = context.getString(R.string.analysis_searching) + "…"
             this.pushViewUpdate(true)
-            var progressCallback = {
+            val progressCallback = {
                 description: String, percent: Double ->
-                this.aStatus.workingText = "Searching segments: $description..."
+                this.aStatus.workingText = context.getString(R.string.analysis_searching) + ": $description…"
                 this.aStatus.workingProgress = (percent * 100).toInt()
                 this.pushViewUpdate(false)
             }
-            var segments = iriSvc.getSectionRecommendations(progressCallback)
-            this.aStatus.resultText += "\nSegments (overall): ${segments.size}"
+            val segments = iriSvc.getSectionRecommendations(context, progressCallback)
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_overall)}: ${segments.size}"
             this.pushViewUpdate(true)
 
             // Add a point for every sections location
-            this.aStatus.workingText = "Calculating IRI per segment..."
+            this.aStatus.workingText = context.getString(R.string.analysis_calculating)
             this.pushViewUpdate(true)
-            var segmentsSkipped: Int = 0
-            var segmentsProcessed: Int = 0
-            var segmentsProcessedIRIAvg: Double = 0.0
-            var segmentsLocations: Int = 0
+            var segmentsSkipped = 0
+            var segmentsProcessed = 0
+            var segmentsProcessedIRIAvg = 0.0
+            var segmentsLocations = 0
             var lastZoom = 0L
             for (i in segments.indices) {
                 if(Date().time - lastZoom > 1000) { // Which would be one second...
@@ -84,7 +86,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                     val iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
                     segmentsProcessed += 1
-                    val iriStr = (Math.round(iri * 1000).toDouble() / 1000).toString()
+                    val iriStr = ((iri * 1000).roundToInt().toDouble() / 1000).toString()
                     this.fragment.addLineMarker(segment.locations, "IRI: $iriStr")
                     this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
                 } catch (e: Exception) {
@@ -97,18 +99,18 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             }
             this.fragment.resetZoom(respectUserLocation = false, animated = true)
             segmentsProcessedIRIAvg /= segmentsProcessed.toDouble()
-            this.aStatus.resultText += "\nSegments (skipped): $segmentsSkipped"
-            this.aStatus.resultText += "\nSegments (processed): $segmentsProcessed"
-            this.aStatus.resultText += "\nSegments locations: $segmentsLocations"
-            this.aStatus.resultText += "\nSegments IRI (avg): $segmentsProcessedIRIAvg"
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_skipped)}: $segmentsSkipped"
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_processed)}: $segmentsProcessed"
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_locations)}: $segmentsLocations"
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_avg)}: $segmentsProcessedIRIAvg"
         } catch(e: Exception) {
             if(e.message == this.expectedKillString) {
                 // No! Don't do anything after this point! Just die NOW!
                 this.log.i(this.expectedKillString)
                 return
             }
-            this.log.e("Analysis failed: ${e.stackTraceToString()}")
-            aStatus.resultText = "Failed to analyze the collection: ${e.message}"
+            this.log.e(context.getString(R.string.analysis_failed) + e.stackTraceToString())
+            aStatus.resultText = context.getString(R.string.analysis_failed_reason) + e.localizedMessage
         }
         this.aStatus.working = false
         this.pushViewUpdate(true)

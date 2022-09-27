@@ -33,15 +33,16 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
                         android:singleLine="true"
-                        android:text="Collector Status" />
+                        android:text="@string/collector_status" />
 
                     <TextView
                         android:id="@+id/collectorStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="..." />
+                        android:text="@string/loading" />
                 </TableRow>
 
                 <TableRow
@@ -51,14 +52,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Collector Uptime" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/collector_uptime" />
 
                     <TextView
                         android:id="@+id/collectorUptime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -68,14 +70,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Collection ID" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/collection_id" />
 
                     <TextView
                         android:id="@+id/collectionId"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -85,14 +88,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Location" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/location" />
 
                     <TextView
                         android:id="@+id/collectorLoc"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -102,14 +106,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Location Time" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/location_time" />
 
                     <TextView
                         android:id="@+id/collectorLocTime"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -119,14 +124,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Location Accuracy" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/location_accuracy" />
 
                     <TextView
                         android:id="@+id/collectorLocAccu"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -136,14 +142,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Location Direction" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/location_direction" />
 
                     <TextView
                         android:id="@+id/collectorLocDir"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -153,14 +160,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Accelerometer" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/accelerometer" />
 
                     <TextView
                         android:id="@+id/collectorAccel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -170,14 +178,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Magnetometer" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/magnetometer" />
 
                     <TextView
                         android:id="@+id/collectorMag"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -187,14 +196,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Gravity" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/gravity" />
 
                     <TextView
                         android:id="@+id/collectorGrav"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -204,14 +214,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Temperature" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/temperature" />
 
                     <TextView
                         android:id="@+id/collectorTemp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -221,14 +232,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Pressure" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/pressure" />
 
                     <TextView
                         android:id="@+id/collectorPress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -238,14 +250,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Humidity" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/humidity" />
 
                     <TextView
                         android:id="@+id/collectorHumi"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="-" />
+                        android:text="@string/none" />
                 </TableRow>
 
                 <TableRow
@@ -255,14 +268,15 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingRight="10dp"
-                        android:text="Remaining Space" />
+                        android:paddingEnd="10dp"
+                        tools:ignore="RtlSymmetry"
+                        android:text="@string/remaining_space" />
 
                     <TextView
                         android:id="@+id/freeSpace"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="..." />
+                        android:text="@string/loading" />
                 </TableRow>
 
             </TableLayout>
@@ -283,7 +297,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_margin="16dp"
-        android:text="..."
+        android:text="@string/loading"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
@@ -307,14 +321,16 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:paddingRight="8dp"
+                android:paddingEnd="8dp"
                 android:scaleType="matrix"
-                android:src="@drawable/ic_twotone_warning_24" />
+                android:src="@drawable/ic_twotone_warning_24"
+                android:contentDescription="@string/warning_icon_description"
+                tools:ignore="RtlSymmetry" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Please keep this activity active, until you have completed your collection - otherwise sensor data gets lost! This means, you may not lock your device, not close this application and not send it to the background. It is also recommended to enable all additional location accuracy providers available and to turn off battery optimizations for this application." />
+                android:text="@string/warning_behavior_during_use" />
 
         </LinearLayout>
     </ScrollView>

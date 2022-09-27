@@ -6,10 +6,9 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.google.android.material.snackbar.Snackbar
-import com.simonmicro.irimeasurement.R
-import com.simonmicro.irimeasurement.services.CollectorService
 import com.simonmicro.irimeasurement.Collection
 import com.simonmicro.irimeasurement.CollectionManager
+import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.services.StorageService
 
 class CollectionView(var collection: Collection, private var activity: CollectionManager?, var exporting: Boolean = false) {
@@ -24,10 +23,10 @@ class CollectionView(var collection: Collection, private var activity: Collectio
         textView1?.text = collection.getMeta().started.toString()
 
         val textView2 = view.findViewById<TextView>(R.id.subtitle)
-        textView2?.text = "${StorageService.getBytesNormalString(collection.getSizeBytes())}, ${collection.id.toString()}"
+        textView2?.text = "${StorageService.getBytesNormalString(collection.getSizeBytes())}, ${collection.id}"
 
-        var savBtn: ImageButton = view.findViewById<ImageButton>(R.id.save)
-        var delBtn: ImageButton = view.findViewById<ImageButton>(R.id.delete)
+        val savBtn: ImageButton = view.findViewById(R.id.save)
+        val delBtn: ImageButton = view.findViewById(R.id.delete)
         if(activity == null) {
             savBtn.visibility = ImageButton.GONE
             delBtn.visibility = ImageButton.GONE

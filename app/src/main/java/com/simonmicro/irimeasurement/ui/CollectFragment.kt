@@ -20,7 +20,6 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.simonmicro.irimeasurement.services.CollectorService
-import com.simonmicro.irimeasurement.HomeScreen
 import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
@@ -76,7 +75,7 @@ class CollectFragment : Fragment() {
     }
 
     private fun updateUI() {
-        var l: List<WorkInfo> = WorkManager.getInstance(this.requireContext()).getWorkInfosForUniqueWork(getString(R.string.service_id)).get()
+        val l: List<WorkInfo> = WorkManager.getInstance(this.requireContext()).getWorkInfosForUniqueWork(getString(R.string.service_id)).get()
         var isRunning: Boolean = false
         if(l.isEmpty()) {
             // Do nothing, as the service never ran
@@ -85,13 +84,13 @@ class CollectFragment : Fragment() {
             val state: WorkInfo.State = l[0].state
             // Update text
             if(state == WorkInfo.State.SUCCEEDED)
-                this.serviceStatus?.text = "Finished"
+                this.serviceStatus?.text = getString(R.string.finished)
             else if(state == WorkInfo.State.FAILED)
-                this.serviceStatus?.text = "Crashed"
+                this.serviceStatus?.text = getString(R.string.crashed)
             else if(state == WorkInfo.State.CANCELLED)
-                this.serviceStatus?.text = "Stopped"
+                this.serviceStatus?.text = getString(R.string.stopped)
             else if(state == WorkInfo.State.RUNNING) {
-                this.serviceStatus?.text = "Running..."
+                this.serviceStatus?.text = getString(R.string.running)
                 isRunning = true
             }
             try {
@@ -112,7 +111,7 @@ class CollectFragment : Fragment() {
                 this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
         }
         if(isRunning && CollectorService.instance != null) {
-            var service: CollectorService = CollectorService.instance!!
+            val service: CollectorService = CollectorService.instance!!
             this.serviceUptime?.text = ((System.currentTimeMillis() - service.startTime) / 1000).toString() + "s"
             val bufferPercent = ((service.dataPointCount - service.dataPointCountOnLastFlush).toFloat() / service.flushTarget.toFloat() * 100).toInt()
             if(bufferPercent > 100) {
@@ -151,10 +150,10 @@ class CollectFragment : Fragment() {
             this.serviceLoad?.progress = 0
         }
         if(this.getServiceUIState()) {
-            this.serviceControlButton?.text = "STOP"
+            this.serviceControlButton?.text = getString(R.string.stop)
             this.activeWarn?.visibility = LinearLayout.VISIBLE
         } else {
-            this.serviceControlButton?.text = "START"
+            this.serviceControlButton?.text = getString(R.string.start)
             this.activeWarn?.visibility = LinearLayout.GONE
         }
     }
@@ -164,7 +163,7 @@ class CollectFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        var view: View = inflater.inflate(R.layout.fragment_collect, container, false)
+        val view: View = inflater.inflate(R.layout.fragment_collect, container, false)
         this.locService = LocationService(this.requireContext(), this.requireActivity() as AppCompatActivity)
 
         this.serviceStatus = view.findViewById(R.id.collectorStatus)
@@ -188,7 +187,7 @@ class CollectFragment : Fragment() {
             if(this.getServiceUIState()) {
                 this.log.i("Stopping collector...")
                 WorkManager.getInstance(this.requireContext()).cancelUniqueWork(getString(R.string.service_id))
-            } else if(this.locService!!.requestPermissionsIfNecessary(this.requireActivity())) {
+            } else if(this.locService.requestPermissionsIfNecessary(this.requireActivity())) {
                 this.log.i("Starting collector...")
                 WorkManager.getInstance(this.requireContext()).enqueueUniqueWork(
                     getString(R.string.service_id),
@@ -204,7 +203,7 @@ class CollectFragment : Fragment() {
 
         // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyways)
         this.done = false
-        var that = this
+        val that = this
         val handler = Handler()
         val runnableCode: Runnable = object : Runnable {
             override fun run() {

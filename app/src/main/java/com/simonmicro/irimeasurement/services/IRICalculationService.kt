@@ -3,6 +3,7 @@ package com.simonmicro.irimeasurement.services
 import android.content.Context
 import android.location.Geocoder
 import com.simonmicro.irimeasurement.Collection
+import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.services.points.*
 import java.lang.Double.max
 import java.lang.Double.min
@@ -13,28 +14,21 @@ import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
 
-class IRICalculationService {
+class IRICalculationService(private val collection: Collection, private val context: Context, private var useAccelerometer: Boolean, private var useGeocoding: Boolean) {
     private val log = com.simonmicro.irimeasurement.util.Log(IRICalculationService::class.java.name)
     private data class CollectionData(
         var start: Date,
         var end: Date,
         var accelerometer: List<AccelerometerPoint>,
         var location: List<LocationPoint>
-    ) { }
-    private var useAccelerometer: Boolean
-    private var useGeocoding: Boolean
-    private val context: Context
-    private val collection: Collection
+    )
+
     private var collectionData: CollectionData
-    inner class Segment {
-        private var svc: IRICalculationService
+    inner class Segment(var locations: List<EstimatedLocationPoint>) {
         var start: Date
         var end: Date
-        var locations: List<EstimatedLocationPoint>
 
-        constructor(svc: IRICalculationService, locations: List<EstimatedLocationPoint>) {
-            this.svc = svc
-            this.locations = locations
+        init {
             assert(this.locations.size > 1) { "Every segment must have at least two locations!" }
             this.start = Date(this.locations[0].time)
             this.end = Date(this.locations[this.locations.size - 1].time)
@@ -42,32 +36,27 @@ class IRICalculationService {
         }
 
         override fun toString(): String {
-            var from: EstimatedLocationPoint = this.locations[0]
-            var to: EstimatedLocationPoint = this.locations[this.locations.size - 1]
+            val from: EstimatedLocationPoint = this.locations[0]
+            val to: EstimatedLocationPoint = this.locations[this.locations.size - 1]
             return "Segment of ${this.locations.size} locations, from ${from.time} to ${to.time}, from $from to $to"
         }
     }
 
-    constructor(collection: Collection, context: Context, useAccelerometer: Boolean, useGeocoding: Boolean) {
-        this.context = context // Used for Geocoder
-        this.collection = collection
-        this.useAccelerometer = useAccelerometer
-        this.useGeocoding = useGeocoding
-        // Load accelerometer data
+    init {
         var start: Date? = null
         var end: Date? = null
-        var accelerometer: List<AccelerometerPoint> = this.collection.getPoints(::AccelerometerPoint)
+        val accelerometer: List<AccelerometerPoint> = this.collection.getPoints(::AccelerometerPoint)
         for(accel in accelerometer) {
-            var t = Date(accel.time)
+            val t = Date(accel.time)
             if(start == null || start > t)
                 start = t
             if(end == null || end < t)
                 end = t
         }
-        var locationRaw: List<LocationPoint> = this.collection.getPoints(::LocationPoint)
-        var location: ArrayList<LocationPoint> = ArrayList()
+        val locationRaw: List<LocationPoint> = this.collection.getPoints(::LocationPoint)
+        val location: ArrayList<LocationPoint> = ArrayList()
         for(loc in locationRaw) {
-            var t = Date(loc.time)
+            val t = Date(loc.time)
             if(start == null || start > t)
                 start = t
             if(end == null || end < t)
@@ -100,13 +89,10 @@ class IRICalculationService {
         var from: LocationPoint? = null
         var to: LocationPoint? = null
         for(locId in this.collectionData.location.indices) {
-            var loc = this.collectionData.location[locId]
+            val loc = this.collectionData.location[locId]
             if(loc.time >= time) {
                 to = loc
-                if(locId > 0)
-                    from = this.collectionData.location[locId - 1]
-                else
-                    from = to
+                from = if(locId > 0) this.collectionData.location[locId - 1] else to
                 break
             }
         }
@@ -118,7 +104,6 @@ class IRICalculationService {
         }
         if(from == null) {
             this.log.w("Wanted: $time")
-            this.log.w("Has from: $from")
             this.log.w("Has to: $to")
             this.log.w("Has from (really): " + this.collectionData.location[0].time.toString())
             this.log.w("Has to (really): " + this.collectionData.location[this.collectionData.location.size - 1].time.toString())
@@ -126,8 +111,8 @@ class IRICalculationService {
         }
         if(to == null)
             throw RuntimeException("Failed to find to-location!")
-        var moveDuration: Long = to.time - from.time // In ms
-        var movePercent: Double = min(1.0, (time - from.time).toDouble() / moveDuration.toDouble())
+        val moveDuration: Long = to.time - from.time // In ms
+        val movePercent: Double = min(1.0, (time - from.time).toDouble() / moveDuration.toDouble())
         if(moveDuration == 0L || movePercent == 0.0 || movePercent == 1.0)
             // Okay, in zero ms nobody moves anywhere. Just return the original position
             return EstimatedLocationPoint(from)
@@ -151,18 +136,18 @@ class IRICalculationService {
      * timepoints, on with e.g. the road changed, direction rapidly changed
      * or the user stood still for a while.
      */
-    fun getSectionRecommendations(progressNotification: (description: String, percent: Double) -> Unit): List<Segment> {
+    fun getSectionRecommendations(context: Context, progressNotification: (description: String, percent: Double) -> Unit): List<Segment> {
         var sectionTimes = ArrayList<Date>()
         if(this.useAccelerometer) {
             // Search all times were acceleration differs greater than variance from average
-            var accelAvg: Double = 0.0
+            var accelAvg = 0.0
             for(accel in this.collectionData.accelerometer)
                 accelAvg += accel.accelX + accel.accelY + accel.accelZ
             accelAvg /= this.collectionData.accelerometer.size
-            var accelVar: Double = 0.0
+            var accelVar = 0.0
             for(accel in this.collectionData.accelerometer) {
-                var p: Double = ((accel.accelX + accel.accelY + accel.accelZ) - accelAvg)
-                var q: Double = p * p
+                val p: Double = ((accel.accelX + accel.accelY + accel.accelZ) - accelAvg)
+                val q: Double = p * p
                 accelVar += q
             }
             if(this.collectionData.location.size < 2)
@@ -170,9 +155,9 @@ class IRICalculationService {
             accelVar /= this.collectionData.accelerometer.size - 1
             this.log.d("Accelerometer average $accelAvg with variance of $accelVar")
             for(accelId in this.collectionData.accelerometer.indices) {
-                var accel = this.collectionData.accelerometer[accelId]
-                var p: Double = (accel.accelX + accel.accelY + accel.accelZ).toDouble()
-                progressNotification("Acceleration", accelId / this.collectionData.accelerometer.size.toDouble())
+                val accel = this.collectionData.accelerometer[accelId]
+                val p: Double = (accel.accelX + accel.accelY + accel.accelZ).toDouble()
+                progressNotification(context.getString(R.string.acceleration), accelId / this.collectionData.accelerometer.size.toDouble())
                 if(accelAvg + accelVar > p && accelAvg - accelVar < p)
                     continue
                 sectionTimes.add(Date(accel.time))
@@ -197,7 +182,7 @@ class IRICalculationService {
                                 currentAddressLine = simpleLine
                             }
                         }
-                        progressNotification("Geocoding", locationId / this.collectionData.location.size.toDouble())
+                        progressNotification(context.getString(R.string.geocoding), locationId / this.collectionData.location.size.toDouble())
                     }
                 }
             } else
@@ -207,35 +192,34 @@ class IRICalculationService {
         if(sectionTimes.isEmpty())
             this.log.w("No segments could be found - no criteria yielded any results!r")
 
-        progressNotification("Sort", -1.0)
+        progressNotification(context.getString(R.string.sort), -1.0)
         sectionTimes = ArrayList(sectionTimes.sorted())
 
         // Now assemble the segments, based on the segmentTimes and available data
-        var sections = ArrayList<Segment>()
+        val sections = ArrayList<Segment>()
         var locationsForNextSegment = ArrayList<EstimatedLocationPoint>()
         locationsForNextSegment.add(this.getLocation(this.collectionData.start)) // For the very start!
         for(locId in this.collectionData.location.indices) {
-            var location = this.collectionData.location[locId]
+            val location = this.collectionData.location[locId]
             while(sectionTimes.isNotEmpty() && sectionTimes[0] < Date(location.time)) {
                 // Next segment time is smaller than the location -> create new segment
-                var thisLoc = this.getLocation(sectionTimes[0])
+                val thisLoc = this.getLocation(sectionTimes[0])
                 sectionTimes.removeAt(0)
                 locationsForNextSegment.add(thisLoc)
                 if(this.getEstimatedLocationDistance(locationsForNextSegment) > 16) { // Only add segments, which are greater than 16 meters
-                    sections.add(Segment(this, locationsForNextSegment))
+                    sections.add(Segment(locationsForNextSegment))
                     locationsForNextSegment = ArrayList() // Do not clear, as the segment would then be too...
                     locationsForNextSegment.add(thisLoc)
                 }
             }
             locationsForNextSegment.add(EstimatedLocationPoint(location))
-            progressNotification("Assemble", locId / this.collectionData.location.size.toDouble())
+            progressNotification(context.getString(R.string.assemble), locId / this.collectionData.location.size.toDouble())
         }
         if(locationsForNextSegment.size > 1) {
             locationsForNextSegment.add(this.getLocation(this.collectionData.end)) // For the very end!
-            sections.add(Segment(this, locationsForNextSegment))
-            locationsForNextSegment = ArrayList()
-        } else
-            locationsForNextSegment = ArrayList()
+            sections.add(Segment(locationsForNextSegment))
+        }
+        locationsForNextSegment = ArrayList()
         assert(locationsForNextSegment.isEmpty()) { "We must not forget the last segment locations!" }
         return sections
     }
@@ -244,7 +228,7 @@ class IRICalculationService {
     private fun locationToXYZ(location: LocationPoint): DoubleArray {
         var lat = location.locLat
         var lon = location.locLon
-        var r = earthR + location.locHeight // in m
+        val r = earthR + location.locHeight // in m
         lat = Math.toRadians(lat)
         lon = Math.toRadians(lon)
         val x: Double = r * cos(lat) * cos(lon)
@@ -256,21 +240,21 @@ class IRICalculationService {
     private fun getLocationDistance(from: LocationPoint, to: LocationPoint): Double {
         if(from == to)
             return 0.0
-        var fromXYZ: DoubleArray = this.locationToXYZ(from)
-        var toXYZ: DoubleArray = this.locationToXYZ(to)
+        val fromXYZ: DoubleArray = this.locationToXYZ(from)
+        val toXYZ: DoubleArray = this.locationToXYZ(to)
         if(fromXYZ[0] == toXYZ[0] && fromXYZ[1] == toXYZ[1] && fromXYZ[2] == toXYZ[2])
             return 0.0
         var frac: Double = (fromXYZ[0] * toXYZ[0] + fromXYZ[1] * toXYZ[1] + fromXYZ[2] * toXYZ[2]) / ((earthR + from.locHeight) * (earthR + to.locHeight))
         frac = min(frac, 1.0) // In rare rounding cases the distance my be greater than 1, which is impossible
-        var alpha: Double = acos(frac)
+        val alpha: Double = acos(frac)
         return alpha * earthR // in m
     }
 
     private fun getEstimatedLocationDistance(locations: List<EstimatedLocationPoint>): Double {
-        var dist: Double = 0.0
+        var dist = 0.0
         for(locId in 1 until locations.size) {
-            var from = locations[locId - 1]
-            var to = locations[locId]
+            val from = locations[locId - 1]
+            val to = locations[locId]
             dist += this.getLocationDistance(from, to)
         }
         return dist
@@ -286,7 +270,7 @@ class IRICalculationService {
         val dist: Double = this.getEstimatedLocationDistance(segment.locations)
         if(dist <= 0.0)
             throw RuntimeException("The sections start and end are the same point (no distance!)")
-        var sum: Double = 0.0 // The part over the fraction
+        var sum = 0.0 // The part over the fraction
         var lastAcc: AccelerometerPoint? = null
         for(acc: AccelerometerPoint in this.collectionData.accelerometer) {
             if(Date(acc.time) < segment.start)
@@ -298,7 +282,7 @@ class IRICalculationService {
                 continue
             }
             var alpha: Double = abs(lastAcc.accelX - acc.accelX).toDouble() + abs(lastAcc.accelY - acc.accelY).toDouble() + abs(lastAcc.accelZ - acc.accelZ).toDouble()
-            var time: Double = (acc.time - lastAcc.time).toDouble()
+            val time: Double = (acc.time - lastAcc.time).toDouble()
             alpha *= time * time
             sum += alpha
             lastAcc = acc

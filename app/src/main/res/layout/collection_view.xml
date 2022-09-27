@@ -31,7 +31,7 @@
                     android:id="@+id/title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="..."
+                    android:text="@string/loading"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
@@ -39,7 +39,7 @@
                     android:id="@+id/subtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="..."
+                    android:text="@string/loading"
                     android:textColor="@android:color/darker_gray"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -63,13 +63,14 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/save"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/ic_twotone_warning_24" />
+            app:srcCompat="@drawable/ic_twotone_warning_24"
+            android:contentDescription="@string/warning_icon_description" />
 
         <ImageButton
             android:id="@+id/save"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:contentDescription="save"
+            android:contentDescription="@string/save_description"
             android:padding="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/delete"
@@ -80,7 +81,7 @@
             android:id="@+id/delete"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:contentDescription="delete"
+            android:contentDescription="@string/delete_description"
             android:padding="8dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"

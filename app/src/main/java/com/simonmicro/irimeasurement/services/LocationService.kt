@@ -24,6 +24,7 @@ import com.google.android.gms.common.GoogleApiAvailability
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.*
 import com.google.android.material.snackbar.Snackbar
+import com.simonmicro.irimeasurement.R
 import com.simonmicro.irimeasurement.RequestCodes
 import java.lang.Math.min
 import java.util.concurrent.TimeUnit
@@ -123,19 +124,18 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
         log.d("Location status: GLS? $allGLSTags, Native? $allKnownNativeProviders")
         var msg =
             if (googlePlayStatus == ConnectionResult.SUCCESS) {
-                assert(glsClient != null) { "If GLS is available, we should have access to the gls client!" }
+                assert(glsClient != null) { "If GLS is available, we should have access to the GLS client!" }
                 if(allGLSTags.isEmpty())
-                    "Google Play Services are available, but inaccessible."
+                    context.getString(R.string.google_ok_inaccessbile)
                 else
-                    "Google Play Services are used for location (${allGLSTags.joinToString()})."
-            } else {
-                "Google Play Services are not available (${serviceStatusToString(googlePlayStatus)})."
-            }
+                    "${context.getString(R.string.google_ok)} (${allGLSTags.joinToString()})."
+            } else
+                "${context.getString(R.string.google_bad)} (${serviceStatusToString(googlePlayStatus)})."
         msg += " " +
                 if(allKnownNativeProviders.isEmpty())
-                    "Native Android providers are not available or inaccessible."
+                    context.getString(R.string.native_bad)
                 else
-                    "Using native Android providers (${allKnownNativeProviders.joinToString()})."
+                    "${context.getString(R.string.native_ok)} (${allKnownNativeProviders.joinToString()})."
         showWarning(msg, showLocationInitMsg || forceShowMessage)
         if(snackbarTarget != null) // If it was shown, do not show again!
             showLocationInitMsg = false
@@ -220,7 +220,7 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
                 returnMe = loc
 
         if(returnMe == null)
-            showWarning("Location is currently unavailable...", showWarning)
+            showWarning(context.getString(R.string.location_unavailable), showWarning)
 
         return returnMe
     }
@@ -263,7 +263,7 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
                 returnMe = loc
 
         if(returnMe == null)
-            showWarning("Location is currently unavailable...", showWarning)
+            showWarning(context.getString(R.string.location_unavailable), showWarning)
 
         return returnMe
     }
@@ -296,7 +296,7 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
         }
 
         if(!registered)
-            showWarning("Failed to register for location updates: No location provider available?!", true)
+            showWarning(context.getString(R.string.location_register_no_providers), true)
         return registered
     }
 
@@ -321,7 +321,7 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
             (!requirePrecise && ActivityCompat.checkSelfPermission(this.context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)) {
             true
         } else {
-            showWarning("A permission for location is or was missing. The requested function is may not available.", showWarning)
+            showWarning(context.getString(R.string.location_permission_missing), showWarning)
             false
         }
     }
@@ -369,13 +369,12 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
             // Show an alert
             if (showExplanation) {
                 val builder = AlertDialog.Builder(this.context)
-                builder.setTitle("Permission" + (if (permissionsToRequest.size > 1) "s" else "") + " required!")
-                    .setMessage("As you may already have noted, using a GEO-application will require using your PRECISE location. " +
-                    "Please grant its usage (make sure to also allow precise location access!) - otherwise the app may won't be able to proceed...")
+                builder.setTitle(context.getString(R.string.location_explain_title_0) + (if (permissionsToRequest.size > 1) context.getString(R.string.location_explain_title_multi) else "") + " " + context.getString(R.string.location_explain_title_1) + "!")
+                    .setMessage(context.getString(R.string.location_explain_text))
                 val alert = builder.create()
                 alert.show()
             } else
-                showWarning("A permission for location is missing. The requested function is may not available.", true)
+                showWarning(context.getString(R.string.location_permission_missing), true)
         } else
             this.initializeProviders(true,null)
     }

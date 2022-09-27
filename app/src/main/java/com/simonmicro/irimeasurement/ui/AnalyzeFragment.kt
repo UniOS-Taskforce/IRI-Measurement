@@ -46,7 +46,7 @@ class AnalyzeFragment : Fragment() {
     private lateinit var collectionsArrayAdapter: ArrayAdapter<String>
     private lateinit var analyzeNoCollection: TextView
     private lateinit var analyzeProperties: LinearLayout
-    data class AnalyzeStatus(var working: Boolean, var workingProgress: Int = -1, var workingText: String = "", var resultText: String = "") { }
+    data class AnalyzeStatus(var working: Boolean, var workingProgress: Int = -1, var workingText: String = "", var resultText: String = "")
     var activeAnalysisThread: AnalysisThread? = null
 
     fun updateAnalyzeStatus(view: View, aStatus: AnalyzeStatus) {
@@ -89,13 +89,13 @@ class AnalyzeFragment : Fragment() {
         Configuration.getInstance().userAgentValue = s
 
         // Init the map
-        map = view.findViewById<MapView>(R.id.map)
+        map = view.findViewById(R.id.map)
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
         val mapDefaultMargin: Int = map.marginBottom
 
         // Add map resize (with animation) to the button
-        val resizeButtn: FloatingActionButton = view.findViewById<FloatingActionButton>(R.id.toggleLayoutButton)
+        val resizeButtn: FloatingActionButton = view.findViewById(R.id.toggleLayoutButton)
         resizeButtn.setOnClickListener {
             this.mapExpanded = !this.mapExpanded
 
@@ -184,7 +184,7 @@ class AnalyzeFragment : Fragment() {
     fun startAnalysis(uuid: UUID?) {
         val now: UUID? = uuid?: this.lastAnalysisUUID
         if(now != null) {
-            this.activeAnalysisThread = AnalysisThread(requireView(), this, now, useAccelerometer = this.analysisUseAccelerometer.isChecked, useGeocoding = this.analysisUseGeocoding.isChecked)
+            this.activeAnalysisThread = AnalysisThread(requireView(), this, requireContext(), now, useAccelerometer = this.analysisUseAccelerometer.isChecked, useGeocoding = this.analysisUseGeocoding.isChecked)
             this.activeAnalysisThread!!.start()
             lastAnalysisUUID = now
         } else
