@@ -42,7 +42,8 @@ class AnalyzeFragment : Fragment() {
     private var mapExpanded: Boolean = true
     private val log = com.simonmicro.irimeasurement.util.Log(AnalyzeFragment::class.java.name)
     private var done: Boolean = false
-    private var collectionOptions: ArrayList<String> = ArrayList()
+    private var collectionOptionNames: ArrayList<String> = ArrayList()
+    private var collectionOptionUUIDs: ArrayList<UUID> = ArrayList()
     private lateinit var collectionsArrayAdapter: ArrayAdapter<String>
     private lateinit var analyzeNoCollection: TextView
     private lateinit var analyzeProperties: LinearLayout
@@ -151,7 +152,7 @@ class AnalyzeFragment : Fragment() {
         analyzeNoCollection = view.findViewById(R.id.analyzeNoCollection)
         analyzeProperties = view.findViewById(R.id.analyzeProperties)
 
-        collectionsArrayAdapter = ArrayAdapter(view.context, R.layout.simple_spinner_item, collectionOptions)
+        collectionsArrayAdapter = ArrayAdapter(view.context, R.layout.simple_spinner_item, collectionOptionNames)
         collectionsArrayAdapter.setDropDownViewResource(R.layout.simple_spinner_dropdown_item)
 
         val spinner = view.findViewById<Spinner>(R.id.spinner)
@@ -163,7 +164,7 @@ class AnalyzeFragment : Fragment() {
                 position: Int,
                 id: Long
             ) {
-                that.startAnalysis(UUID.fromString(collectionOptions[position]))
+                that.startAnalysis(collectionOptionUUIDs[position])
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
@@ -205,10 +206,13 @@ class AnalyzeFragment : Fragment() {
             analyzeNoCollection.visibility = TextView.GONE
             analyzeProperties.visibility = LinearLayout.VISIBLE
 
-            collectionOptions.clear()
+            collectionOptionNames.clear()
+            collectionOptionUUIDs.clear()
             for(c in l)
-                if(!c.isInUse())
-                    collectionOptions.add(c.id.toString())
+                if(!c.isInUse()) {
+                    collectionOptionNames.add("${c.getMeta().started} (${c.id})")
+                    collectionOptionUUIDs.add(c.id)
+                }
             collectionsArrayAdapter.notifyDataSetChanged()
         }
     }
