@@ -65,10 +65,10 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             this.aStatus.workingText = context.getString(R.string.analysis_calculating)
             this.pushViewUpdate(true)
             var segmentsSkipped = 0
-            var segmentsProcessed = 0
             var segmentsProcessedIRIAvg = 0.0
             var segmentsLocations = 0
             var lastZoom = 0L
+            val iriValues = ArrayList<Double>()
             for (i in segments.indices) {
                 if(Date().time - lastZoom > 1000) { // Which would be one second...
                     this.fragment.resetZoom(respectUserLocation = false, animated = true)
@@ -85,7 +85,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                 try {
                     val iri: Double = iriSvc.getIRIValue(segment)
                     segmentsProcessedIRIAvg += iri
-                    segmentsProcessed += 1
+                    iriValues.add(iri)
                     val iriStr = ((iri * 1000).roundToInt().toDouble() / 1000).toString()
                     this.fragment.addLineMarker(segment.locations, "IRI: $iriStr")
                     this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
@@ -98,11 +98,20 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                 this.pushViewUpdate(false)
             }
             this.fragment.resetZoom(respectUserLocation = false, animated = true)
-            segmentsProcessedIRIAvg /= segmentsProcessed.toDouble()
+            segmentsProcessedIRIAvg /= iriValues.size.toDouble()
+            var segmentsProcessedIRIVar = 0.0
+            if(iriValues.size > 1) {
+                for (iri in iriValues) {
+                    val minus = iri - segmentsProcessedIRIAvg
+                    segmentsProcessedIRIVar += minus * minus
+                }
+                segmentsProcessedIRIVar /= (iriValues.size - 1)
+            }
             this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_skipped)}: $segmentsSkipped"
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_processed)}: $segmentsProcessed"
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_processed)}: ${iriValues.size}"
             this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_locations)}: $segmentsLocations"
             this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_avg)}: $segmentsProcessedIRIAvg"
+            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_var)}: $segmentsProcessedIRIVar"
         } catch(e: Exception) {
             if(e.message == this.expectedKillString) {
                 // No! Don't do anything after this point! Just die NOW!

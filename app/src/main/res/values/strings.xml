@@ -94,7 +94,8 @@
     <string name="analysis_segments_skipped">Segments (skipped)</string>
     <string name="analysis_segments_processed">Segments (processed)</string>
     <string name="analysis_segments_locations">Segments locations</string>
-    <string name="analysis_segments_avg">Segments IRI (avg)</string>
+    <string name="analysis_segments_avg">Segments IRI (average)</string>
+    <string name="analysis_segments_var">Segments IRI (variance)</string>
     <string name="acceleration">Acceleration</string>
     <string name="geocoding">Geocoding</string>
     <string name="sort">Sort</string>
