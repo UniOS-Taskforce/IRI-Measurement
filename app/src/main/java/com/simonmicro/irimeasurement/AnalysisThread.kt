@@ -1,6 +1,7 @@
 package com.simonmicro.irimeasurement
 
 import android.content.Context
+import android.graphics.Color
 import android.view.View
 import com.simonmicro.irimeasurement.services.IRICalculationService
 import com.simonmicro.irimeasurement.ui.AnalyzeFragment
@@ -10,7 +11,7 @@ import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.math.roundToInt
 
-class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var context: Context, private var collectionUUID: UUID, private var useAccelerometer: Boolean, private var useGeocoding: Boolean): Thread() {
+class AnalysisThread(private var view: View, private var fragment: AnalyzeFragment, private var context: Context, private var collectionUUID: UUID, private var useAccelerometer: Boolean, private var useGeocoding: Boolean, private var useSegmentColorRules: Boolean): Thread() {
     private val log = com.simonmicro.irimeasurement.util.Log(AnalysisThread::class.java.name)
     private var aStatus = AnalyzeFragment.AnalyzeStatus(false)
     private var expectedKillString = "Active analysis thread reference changed - terminating this instance!"
@@ -87,11 +88,21 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                     segmentsProcessedIRIAvg += iri
                     iriValues.add(iri)
                     val iriStr = ((iri * 1000).roundToInt().toDouble() / 1000).toString()
-                    this.fragment.addLineMarker(segment.locations, "IRI: $iriStr")
+                    if(this.useSegmentColorRules) {
+                        val segmentColor =
+                            if(iri < 150)
+                                Color.GREEN
+                            else if(iri < 500)
+                                Color.YELLOW
+                            else
+                                Color.RED
+                        this.fragment.addLineMarker(segment.locations, "IRI: $iriStr", segmentColor)
+                    } else
+                        this.fragment.addLineMarker(segment.locations, "IRI: $iriStr", null)
                     this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
                 } catch (e: Exception) {
                     segmentsSkipped += 1
-                    this.fragment.addLineMarker(segment.locations, e.message)
+                    this.fragment.addLineMarker(segment.locations, e.message, Color.BLUE)
                     this.log.w("Skipped segment ($segmentsSkipped) ${segment}: ${e.stackTraceToString()}")
                 }
                 this.aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()

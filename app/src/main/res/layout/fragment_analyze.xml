@@ -124,6 +124,13 @@
                     android:checked="true"
                     android:text="@string/use_geocode" />
 
+                <Switch
+                    android:id="@+id/analysisUseColorRules"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="@string/use_color_rules" />
+
                 <Button
                     android:id="@+id/triggerAnalysisNow"
                     android:layout_width="match_parent"

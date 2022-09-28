@@ -96,4 +96,5 @@
     <string name="google_ok">Google Play-Dienste werden für die Standortbestimmung verwendet</string>
     <string name="google_ok_inaccessbile">Google Play-Dienste sind verfügbar, aber nicht zugänglich.</string>
     <string name="location_explain_text">Wie Sie vielleicht bereits bemerkt haben, erfordert die Verwendung einer GEO-Anwendung die Angabe Ihres PRÄZISEN Standortes. Bitte gestatten Sie die Verwendung (stellen Sie sicher, dass Sie auch den genauen Standortzugriff zulassen!) - andernfalls kann die App möglicherweise nicht fortfahren …</string>
+    <string name="use_color_rules">Nutze Farb-Regeln</string>
 </resources>

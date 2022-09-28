@@ -29,6 +29,7 @@
     <string name="show_estimations">Show estimated locations</string>
     <string name="use_accel">Use Accelerometer</string>
     <string name="use_geocode">Use Geocoding</string>
+    <string name="use_color_rules">Use Color Rules</string>
     <string name="apply_changes">Apply changes</string>
     <string name="select_collection">Select Collection</string>
     <string name="collector_status">Collector Status</string>

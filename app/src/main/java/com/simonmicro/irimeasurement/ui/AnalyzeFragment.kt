@@ -37,6 +37,7 @@ class AnalyzeFragment : Fragment() {
     private lateinit var mapShowIntermediateMarkers: Switch
     private lateinit var analysisUseAccelerometer: Switch
     private lateinit var analysisUseGeocoding: Switch
+    private lateinit var analysisUseColorRules: Switch
     private lateinit var map: MapView
     private lateinit var locService: LocationService
     private var mapExpanded: Boolean = true
@@ -82,6 +83,7 @@ class AnalyzeFragment : Fragment() {
         this.mapShowIntermediateMarkers = view.findViewById(R.id.mapShowIntermediateMarkers)
         this.analysisUseAccelerometer = view.findViewById(R.id.analysisUseAccelerometer)
         this.analysisUseGeocoding = view.findViewById(R.id.analysisUseGeocoding)
+        this.analysisUseColorRules = view.findViewById(R.id.analysisUseColorRules)
         this.locService = LocationService(this.requireContext(), this.requireActivity() as AppCompatActivity)
 
         // Init valid UserAgent for the map (otherwise tiles won't load)
@@ -185,7 +187,7 @@ class AnalyzeFragment : Fragment() {
     fun startAnalysis(uuid: UUID?) {
         val now: UUID? = uuid?: this.lastAnalysisUUID
         if(now != null) {
-            this.activeAnalysisThread = AnalysisThread(requireView(), this, requireContext(), now, useAccelerometer = this.analysisUseAccelerometer.isChecked, useGeocoding = this.analysisUseGeocoding.isChecked)
+            this.activeAnalysisThread = AnalysisThread(requireView(), this, requireContext(), now, useAccelerometer = this.analysisUseAccelerometer.isChecked, useGeocoding = this.analysisUseGeocoding.isChecked, useSegmentColorRules = analysisUseColorRules.isChecked)
             this.activeAnalysisThread!!.start()
             lastAnalysisUUID = now
         } else
@@ -261,7 +263,7 @@ class AnalyzeFragment : Fragment() {
 
     private var lineColors = arrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.MAGENTA, Color.CYAN, Color.DKGRAY)
     private var lineColorsIndex: Int = 0
-    fun addLineMarker(locations: List<LocationPoint>, title: String?) {
+    fun addLineMarker(locations: List<LocationPoint>, title: String?, color: Int?) {
         val points = ArrayList<GeoPoint>()
         for(location in locations)
             points.add(GeoPoint(location.locLat, location.locLon))
@@ -270,7 +272,7 @@ class AnalyzeFragment : Fragment() {
         line.setPoints(points)
         if(title != null)
             line.title = title
-        line.color = lineColors[lineColorsIndex]
+        line.color = color ?: lineColors[lineColorsIndex]
         lineColorsIndex += 1
         if(lineColorsIndex >= lineColors.size)
             lineColorsIndex = 0
