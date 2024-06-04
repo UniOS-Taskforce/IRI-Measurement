@@ -311,10 +311,6 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         // Nope
     }
 
-    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
-        // Nope
-    }
-
     override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {
         // Nope
     }
