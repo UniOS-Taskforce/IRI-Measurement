@@ -242,6 +242,10 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
             val task = glsClient!!.lastLocation
             for(i in 1..(timeoutGLSLocation / 100)) {
                 if(task.isSuccessful) {
+                    if(task.result == null) {
+                        log.i("GLS finished last-location-task, but also has no idea where we are...")
+                        break // maybe next round then
+                    }
                     locationsToChooseFrom.add(task.result)
                     break
                 } else if(i == (timeoutGLSLocation / 100))
