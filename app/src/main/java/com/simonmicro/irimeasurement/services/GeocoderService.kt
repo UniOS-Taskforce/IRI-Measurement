@@ -103,7 +103,7 @@ class GeocoderService(context: Context): Closeable {
 
     private fun getLocation(lat: Double, lon: Double): String? {
         val addresses = geocoder.getFromLocation(lat, lon, 1)
-        if(addresses != null && addresses.isNotEmpty()) {
+        if(!addresses.isNullOrEmpty()) {
             val address = addresses[0]
             if (address.maxAddressLineIndex >= 0)
                 return address.getAddressLine(0)

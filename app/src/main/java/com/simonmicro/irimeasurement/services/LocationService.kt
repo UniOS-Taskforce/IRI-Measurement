@@ -15,7 +15,6 @@ import android.os.Build
 import android.os.Looper
 import android.view.View
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -62,20 +61,15 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
         }
 
         private fun serviceStatusToString(googlePlayStatus: Int): String {
-            return if (googlePlayStatus == ConnectionResult.SUCCESS) {
-                "SUCCESS"
-            } else if (googlePlayStatus == ConnectionResult.SERVICE_MISSING)
-                "SERVICE_MISSING"
-            else if (googlePlayStatus == ConnectionResult.SERVICE_UPDATING)
-                "SERVICE_UPDATING"
-            else if (googlePlayStatus == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED)
-                "SERVICE_VERSION_UPDATE_REQUIRED"
-            else if (googlePlayStatus == ConnectionResult.SERVICE_DISABLED)
-                "SERVICE_DISABLED"
-            else if (googlePlayStatus == ConnectionResult.SERVICE_INVALID)
-                "SERVICE_INVALID"
-            else
-                "Unknown status ($googlePlayStatus)"
+            return when (googlePlayStatus) {
+                ConnectionResult.SUCCESS -> "SUCCESS"
+                ConnectionResult.SERVICE_MISSING -> "SERVICE_MISSING"
+                ConnectionResult.SERVICE_UPDATING -> "SERVICE_UPDATING"
+                ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED -> "SERVICE_VERSION_UPDATE_REQUIRED"
+                ConnectionResult.SERVICE_DISABLED -> "SERVICE_DISABLED"
+                ConnectionResult.SERVICE_INVALID -> "SERVICE_INVALID"
+                else -> "Unknown status ($googlePlayStatus)"
+            }
         }
     }
 
@@ -288,9 +282,9 @@ class LocationService(private val context: Context, activity: FragmentActivity?)
 
         // Register on GLS
         if(glsClient != null) {
-            val lr: LocationRequest = LocationRequest.create()
-            lr.smallestDisplacement = 0.0f
-            lr.interval = 1000
+            val lr = LocationRequest.Builder(0)
+                .setMinUpdateDistanceMeters(0.0f)
+                .build()
             glsClient!!.requestLocationUpdates(lr, lCb, looper)
             registered = true
         }
