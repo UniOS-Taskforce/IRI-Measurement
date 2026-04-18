@@ -2,7 +2,9 @@ package com.simonmicro.irimeasurement
 
 import android.content.Context
 import android.graphics.Color
+import android.location.Geocoder
 import android.view.View
+import com.simonmicro.irimeasurement.services.GeocoderService
 import com.simonmicro.irimeasurement.services.IRICalculationService
 import com.simonmicro.irimeasurement.ui.AnalyzeFragment
 import kotlinx.coroutines.CoroutineScope
@@ -44,85 +46,98 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             val c = Collection(this.collectionUUID)
             aStatus.resultText = c.toSnackbarString(context)
 
-            // Analyze the data
-            this.aStatus.workingText = context.getString(R.string.analysis_parsing)
-            this.pushViewUpdate(true)
-            val iriSvc = IRICalculationService(collection = c, context = this.fragment.requireContext(), useAccelerometer = useAccelerometer, useGeocoding = useGeocoding)
+            // The following block may use one single cached geocoder service instance
+            var gcs: GeocoderService? = null
+            if (useGeocoding) {
+                if (Geocoder.isPresent()) {
+                    gcs = GeocoderService(this.context)
+                }
+            }
+            gcs.use {
+                // Analyze the data
+                this.aStatus.workingText = context.getString(R.string.analysis_parsing)
+                this.pushViewUpdate(true)
+                val iriSvc = IRICalculationService(collection = c, context = this.fragment.requireContext(), useAccelerometer = useAccelerometer, useGeocoder = gcs)
 
-            // Determine the collected segments
-            this.aStatus.workingText = context.getString(R.string.analysis_searching) + "…"
-            this.pushViewUpdate(true)
-            val progressCallback = {
-                description: String, percent: Double ->
-                this.aStatus.workingText = context.getString(R.string.analysis_searching) + ": $description…"
-                this.aStatus.workingProgress = (percent * 100).toInt()
-                this.pushViewUpdate(false)
-            }
-            val segments = iriSvc.getSectionRecommendations(context, progressCallback)
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_overall)}: ${segments.size}"
-            this.pushViewUpdate(true)
+                // Determine the collected segments
+                this.aStatus.workingText = context.getString(R.string.analysis_searching) + "…"
+                this.pushViewUpdate(true)
+                val progressCallback = {
+                    description: String, percent: Double ->
+                    this.aStatus.workingText = context.getString(R.string.analysis_searching) + ": $description…"
+                    this.aStatus.workingProgress = (percent * 100).toInt()
+                    this.pushViewUpdate(false)
+                }
+                val segments = iriSvc.getSectionRecommendations(context, progressCallback)
+                this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_overall)}: ${segments.size}"
+                this.pushViewUpdate(true)
 
-            // Add a point for every section's location
-            this.aStatus.workingText = context.getString(R.string.analysis_calculating)
-            this.pushViewUpdate(true)
-            var segmentsSkipped = 0
-            var segmentsProcessedIRIAvg = 0.0
-            var segmentsLocations = 0
-            var lastZoom = 0L
-            val iriValues = ArrayList<Double>()
-            for (i in segments.indices) {
-                if(Date().time - lastZoom > 1000) { // Which would be one second...
-                    this.fragment.resetZoom(respectUserLocation = false, animated = true)
-                    lastZoom = Date().time
+                // Add a point for every section's location
+                this.aStatus.workingText = context.getString(R.string.analysis_calculating)
+                this.pushViewUpdate(true)
+                var segmentsSkipped = 0
+                var segmentsProcessedIRIAvg = 0.0
+                var segmentsLocations = 0
+                var lastZoom = 0L
+                val iriValues = ArrayList<Double>()
+                for (i in segments.indices) {
+                    if(Date().time - lastZoom > 1000) { // Which would be one second...
+                        this.fragment.resetZoom(respectUserLocation = false, animated = true)
+                        lastZoom = Date().time
+                    }
+                    val segment = segments[i]
+                    for(location in segment.locations) {
+                        var title: String? = it?.getCachedLocation(location.locLat, location.locLon)
+                        if(!location.wasEstimated()) // Every real location will get a section marker!
+                            this.fragment.addSegmentMarker(location, title)
+                        else {
+                            if (title != null) // if we display some title anyway, then we can also label it accordingly
+                                title += " (estimated)"
+                            this.fragment.addIntermediateMarker(location, title)
+                        }
+                        segmentsLocations += 1
+                    }
+                    try {
+                        val iri: Double = iriSvc.getIRIValue(segment)
+                        segmentsProcessedIRIAvg += iri
+                        iriValues.add(iri)
+                        val iriStr = ((iri * 1000).roundToInt().toDouble() / 1000).toString()
+                        if(this.useSegmentColorRules) {
+                            val segmentColor =
+                                if(iri < 150)
+                                    Color.GREEN
+                                else if(iri < 500)
+                                    Color.YELLOW
+                                else
+                                    Color.RED
+                            this.fragment.addLineMarker(segment.locations, "IRI: $iriStr", segmentColor)
+                        } else
+                            this.fragment.addLineMarker(segment.locations, "IRI: $iriStr", null)
+                        this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
+                    } catch (e: Exception) {
+                        segmentsSkipped += 1
+                        this.fragment.addLineMarker(segment.locations, e.message, Color.BLUE)
+                        this.log.w("Skipped segment ($segmentsSkipped) ${segment}: ${e.stackTraceToString()}")
+                    }
+                    this.aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()
+                    this.pushViewUpdate(false)
                 }
-                val segment = segments[i]
-                for(location in segment.locations) {
-                    if(!location.wasEstimated()) // Every real location will get a section marker!
-                        this.fragment.addSegmentMarker(location)
-                    else
-                        this.fragment.addIntermediateMarker(location)
-                    segmentsLocations += 1
+                this.fragment.resetZoom(respectUserLocation = false, animated = true)
+                segmentsProcessedIRIAvg /= iriValues.size.toDouble()
+                var segmentsProcessedIRIVar = 0.0
+                if(iriValues.size > 1) {
+                    for (iri in iriValues) {
+                        val minus = iri - segmentsProcessedIRIAvg
+                        segmentsProcessedIRIVar += minus * minus
+                    }
+                    segmentsProcessedIRIVar /= (iriValues.size - 1)
                 }
-                try {
-                    val iri: Double = iriSvc.getIRIValue(segment)
-                    segmentsProcessedIRIAvg += iri
-                    iriValues.add(iri)
-                    val iriStr = ((iri * 1000).roundToInt().toDouble() / 1000).toString()
-                    if(this.useSegmentColorRules) {
-                        val segmentColor =
-                            if(iri < 150)
-                                Color.GREEN
-                            else if(iri < 500)
-                                Color.YELLOW
-                            else
-                                Color.RED
-                        this.fragment.addLineMarker(segment.locations, "IRI: $iriStr", segmentColor)
-                    } else
-                        this.fragment.addLineMarker(segment.locations, "IRI: $iriStr", null)
-                    this.log.i("IRI of segment ${segment}: $iriStr ($iri)")
-                } catch (e: Exception) {
-                    segmentsSkipped += 1
-                    this.fragment.addLineMarker(segment.locations, e.message, Color.BLUE)
-                    this.log.w("Skipped segment ($segmentsSkipped) ${segment}: ${e.stackTraceToString()}")
-                }
-                this.aStatus.workingProgress = ((i / segments.size.toDouble()) * 100).toInt()
-                this.pushViewUpdate(false)
+                this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_skipped)}: $segmentsSkipped"
+                this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_processed)}: ${iriValues.size}"
+                this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_locations)}: $segmentsLocations"
+                this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_avg)}: $segmentsProcessedIRIAvg"
+                this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_var)}: $segmentsProcessedIRIVar"
             }
-            this.fragment.resetZoom(respectUserLocation = false, animated = true)
-            segmentsProcessedIRIAvg /= iriValues.size.toDouble()
-            var segmentsProcessedIRIVar = 0.0
-            if(iriValues.size > 1) {
-                for (iri in iriValues) {
-                    val minus = iri - segmentsProcessedIRIAvg
-                    segmentsProcessedIRIVar += minus * minus
-                }
-                segmentsProcessedIRIVar /= (iriValues.size - 1)
-            }
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_skipped)}: $segmentsSkipped"
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_processed)}: ${iriValues.size}"
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_locations)}: $segmentsLocations"
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_avg)}: $segmentsProcessedIRIAvg"
-            this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_var)}: $segmentsProcessedIRIVar"
         } catch(e: Exception) {
             if(e.message == this.expectedKillString) {
                 // No! Don't do anything after this point! Just die NOW!

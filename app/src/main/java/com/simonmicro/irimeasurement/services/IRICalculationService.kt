@@ -14,7 +14,7 @@ import kotlin.math.acos
 import kotlin.math.cos
 import kotlin.math.sin
 
-class IRICalculationService(private val collection: Collection, private val context: Context, private var useAccelerometer: Boolean, private var useGeocoding: Boolean) {
+class IRICalculationService(private val collection: Collection, private val context: Context, private var useAccelerometer: Boolean, private var useGeocoder: GeocoderService?) {
     private val log = com.simonmicro.irimeasurement.util.Log(IRICalculationService::class.java.name)
     private data class CollectionData(
         var start: Date,
@@ -164,30 +164,26 @@ class IRICalculationService(private val collection: Collection, private val cont
                 this.log.d("Accelerometer triggered new section at ${accel.time} with $p")
             }
         }
-        if(this.useGeocoding) {
+        if(this.useGeocoder != null) {
             // Use Geocoder to trigger new segments on roads
-            if(Geocoder.isPresent()) {
-                GeocoderService(this.context).use {
-                    var currentAddressLine = ""
-                    for (locationId in this.collectionData.location.indices) {
-                        val location = this.collectionData.location[locationId]
-                        val line = it.getCachedLocation(location.locLat, location.locLon)
-                        if(line != null) {
-                            // Every address is more or less like this: "Sutthauser Str. 52, 49124 Georgsmarienhütte, Germany"
-                            // I think everything is relevant - except the house number -> e.g. if the street changes we want to know that!
-                            val simpleLine = line.replace(Regex("(.+)(\\s\\d+)(,\\s\\d+)"), "$1$3")
-                            if (simpleLine != currentAddressLine) {
-                                this.log.d("Next location is at \"$simpleLine\" (from \"$line\") at ${location.time}")
-                                sectionTimes.add(Date(location.time))
-                                currentAddressLine = simpleLine
-                            }
-                        }
-                        progressNotification(context.getString(R.string.geocoding), locationId / this.collectionData.location.size.toDouble())
+            var currentAddressLine = ""
+            for (locationId in this.collectionData.location.indices) {
+                val location = this.collectionData.location[locationId]
+                val line = this.useGeocoder!!.getCachedLocation(location.locLat, location.locLon)
+                if(line != null) {
+                    // Every address is more or less like this: "Sutthauser Str. 52, 49124 Georgsmarienhütte, Germany"
+                    // I think everything is relevant - except the house number -> e.g. if the street changes we want to know that!
+                    val simpleLine = line.replace(Regex("(.+)(\\s\\d+)(,\\s\\d+)"), "$1$3")
+                    if (simpleLine != currentAddressLine) {
+                        this.log.d("Next location is at \"$simpleLine\" (from \"$line\") at ${location.time}")
+                        sectionTimes.add(Date(location.time))
+                        currentAddressLine = simpleLine
                     }
                 }
-            } else
-                this.log.w("Geocoder is not available!")
-        }
+                progressNotification(context.getString(R.string.geocoding), locationId / this.collectionData.location.size.toDouble())
+            }
+        } else
+            this.log.w("Geocoder is not available!")
 
         if(sectionTimes.isEmpty())
             this.log.w("No segments could be found - no criteria yielded any results!r")
