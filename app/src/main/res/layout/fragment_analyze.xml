@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".ui.AnalyzeFragment">
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -60,9 +61,9 @@
                     android:id="@+id/spinner"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:contentDescription="@string/select_collection"
                     android:minHeight="48dp"
-                    android:spinnerMode="dropdown"
-                    android:contentDescription="@string/select_collection"/>
+                    android:spinnerMode="dropdown" />
 
                 <LinearLayout
                     android:id="@+id/analyzeProgressContainer"

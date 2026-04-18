@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".ui.CollectFragment">
 
     <ScrollView
@@ -34,9 +35,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
                         android:singleLine="true"
-                        android:text="@string/collector_status" />
+                        android:text="@string/collector_status"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorStatus"
@@ -53,8 +54,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/collector_uptime" />
+                        android:text="@string/collector_uptime"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorUptime"
@@ -71,8 +72,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/collection_id" />
+                        android:text="@string/collection_id"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectionId"
@@ -89,8 +90,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/location" />
+                        android:text="@string/location"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorLoc"
@@ -107,8 +108,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/location_time" />
+                        android:text="@string/location_time"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorLocTime"
@@ -125,8 +126,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/location_accuracy" />
+                        android:text="@string/location_accuracy"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorLocAccu"
@@ -143,8 +144,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/location_direction" />
+                        android:text="@string/location_direction"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorLocDir"
@@ -161,8 +162,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/accelerometer" />
+                        android:text="@string/accelerometer"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorAccel"
@@ -179,8 +180,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/magnetometer" />
+                        android:text="@string/magnetometer"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorMag"
@@ -197,8 +198,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/gravity" />
+                        android:text="@string/gravity"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorGrav"
@@ -215,8 +216,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/temperature" />
+                        android:text="@string/temperature"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorTemp"
@@ -233,8 +234,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/pressure" />
+                        android:text="@string/pressure"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorPress"
@@ -251,8 +252,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/humidity" />
+                        android:text="@string/humidity"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/collectorHumi"
@@ -269,8 +270,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:paddingEnd="10dp"
-                        tools:ignore="RtlSymmetry"
-                        android:text="@string/remaining_space" />
+                        android:text="@string/remaining_space"
+                        tools:ignore="RtlSymmetry" />
 
                     <TextView
                         android:id="@+id/freeSpace"
@@ -321,10 +322,10 @@
             <ImageView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:contentDescription="@string/warning_icon_description"
                 android:paddingEnd="8dp"
                 android:scaleType="matrix"
                 android:src="@drawable/ic_twotone_warning_24"
-                android:contentDescription="@string/warning_icon_description"
                 tools:ignore="RtlSymmetry" />
 
             <TextView

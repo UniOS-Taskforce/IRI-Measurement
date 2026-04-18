@@ -54,6 +54,7 @@
             android:id="@+id/headSubTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
             android:justificationMode="inter_word"
             android:padding="8dp"
             android:text="@string/loading"
