@@ -29,6 +29,7 @@
     <string name="select_collection">Sammlung auswählen</string>
     <string name="apply_changes">Änderungen anwenden</string>
     <string name="use_geocode">Geocoding verwenden</string>
+    <string name="use_geocode_cache_suffix">Einträge</string>
     <string name="use_accel">Beschleunigung verwenden</string>
     <string name="show_estimations">Berechnete Standorte anzeigen</string>
     <string name="show_locations">Echte Standorte anzeigen</string>
@@ -83,7 +84,6 @@
     <string name="analysis_segments_locations">Segment-Standorte</string>
     <string name="analysis_segments_avg">Segmente IRI (Durchschn.)</string>
     <string name="analysis_segments_var">Segmente IRI (Varianz)</string>
-    <string name="analysis_gcscache_count">Geocoding Cache Größe</string>
     <string name="acceleration">Beschleunigung</string>
     <string name="geocoding">Geocoding</string>
     <string name="sort">Sortieren</string>

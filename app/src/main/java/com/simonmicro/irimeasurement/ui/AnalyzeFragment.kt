@@ -48,7 +48,7 @@ class AnalyzeFragment : Fragment() {
     private lateinit var collectionsArrayAdapter: ArrayAdapter<String>
     private lateinit var analyzeNoCollection: TextView
     private lateinit var analyzeProperties: LinearLayout
-    data class AnalyzeStatus(var working: Boolean, var workingProgress: Int = -1, var workingText: String = "", var resultText: String = "")
+    data class AnalyzeStatus(var working: Boolean, var workingProgress: Int = -1, var workingText: String = "", var resultText: String = "", var gcsCacheSize: Long? = null)
     var activeAnalysisThread: AnalysisThread? = null
 
     fun updateAnalyzeStatus(view: View, aStatus: AnalyzeStatus) {
@@ -56,6 +56,7 @@ class AnalyzeFragment : Fragment() {
         val pBar: ProgressBar = view.findViewById(R.id.analyzeProgress)
         val pText: TextView = view.findViewById(R.id.analyzeProgressDetails)
         val dText: TextView = view.findViewById(R.id.analyzeDetails)
+        val gcsSwitch: Switch = view.findViewById(R.id.analysisUseGeocoding)
         if(aStatus.working) {
             pContainer.visibility = LinearLayout.VISIBLE
             if(aStatus.workingProgress != -1) {
@@ -75,6 +76,10 @@ class AnalyzeFragment : Fragment() {
             dText.text = aStatus.resultText
         } else
             dText.visibility = TextView.GONE
+        var gcsSwitchTitle = view.context.getString(R.string.use_geocode)
+        if(aStatus.gcsCacheSize != null)
+            gcsSwitchTitle += " (${aStatus.gcsCacheSize} ${view.context.getString(R.string.use_geocode_cache_suffix)})"
+        gcsSwitch.text = gcsSwitchTitle
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

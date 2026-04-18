@@ -29,6 +29,7 @@
     <string name="show_estimations">Show estimated locations</string>
     <string name="use_accel">Use Accelerometer</string>
     <string name="use_geocode">Use Geocoding</string>
+    <string name="use_geocode_cache_suffix">entries</string>
     <string name="use_color_rules">Use Color Rules</string>
     <string name="apply_changes">Apply changes</string>
     <string name="select_collection">Select Collection</string>
@@ -97,7 +98,6 @@
     <string name="analysis_segments_locations">Segments locations</string>
     <string name="analysis_segments_avg">Segments IRI (average)</string>
     <string name="analysis_segments_var">Segments IRI (variance)</string>
-    <string name="analysis_gcscache_count">Geocoding cache size</string>
     <string name="acceleration">Acceleration</string>
     <string name="geocoding">Geocoding</string>
     <string name="sort">Sort</string>

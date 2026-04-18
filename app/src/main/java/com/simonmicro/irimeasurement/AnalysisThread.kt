@@ -138,7 +138,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
                 this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_avg)}: $segmentsProcessedIRIAvg"
                 this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_var)}: $segmentsProcessedIRIVar"
                 if (it != null) {
-                    this.aStatus.resultText += "\n${context.getString(R.string.analysis_gcscache_count)}: ${it.getCacheSize()}"
+                    this.aStatus.gcsCacheSize = it.getCacheSize();//"\n${context.getString(R.string.analysis_gcscache_count)}: ${}"
                 }
             }
         } catch(e: Exception) {
