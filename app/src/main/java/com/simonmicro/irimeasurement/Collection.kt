@@ -34,13 +34,13 @@ class Collection(val id: UUID) {
     )
 
     private val path: Path = Path(StorageService.getCollectionsRoot().absolutePath.toString(), this.id.toString())
-    private val metaPath: Path = Path(this.path.toString(), metaName)
+    private val metaPath: Path = Path(this.path.toString(), METADATA_FILENAME)
     private var meta: CollectionMeta = CollectionMeta()
 
     companion object {
         private val log = com.simonmicro.irimeasurement.util.Log(Collection::class.java.name)
-        private const val metaName: String = "metadata.json"
-        private const val bufferSize: Int = 4096
+        private const val METADATA_FILENAME: String = "metadata.json"
+        private const val FILE_BUFFER_SIZE: Int = 4096
 
         private fun fileToMeta(file: File): CollectionMeta {
             this.log.d("Loading metadata file: ${file.toPath()}")
@@ -55,7 +55,7 @@ class Collection(val id: UUID) {
             val inp = ZipInputStream(input)
             var entry: ZipEntry? = inp.nextEntry
             while(entry != null) {
-                val buffer = ByteArray(bufferSize)
+                val buffer = ByteArray(FILE_BUFFER_SIZE)
                 val fosp = Path(tempPath.toString(), entry.name)
                 val fos = FileOutputStream(fosp.toFile())
                 this.log.d("Next file is: $fosp")
@@ -72,11 +72,11 @@ class Collection(val id: UUID) {
             }
             inp.close()
             // Check the metadata.json
-            this.log.d("Checking for $metaName")
-            val metaFile: File = Path(tempPath.toString(), metaName).toFile()
+            this.log.d("Checking for $METADATA_FILENAME")
+            val metaFile: File = Path(tempPath.toString(), METADATA_FILENAME).toFile()
             if(!metaFile.exists())
-                throw RuntimeException("The imported collection does not contain a $metaName")
-            this.log.d("Loading $metaName")
+                throw RuntimeException("The imported collection does not contain a $METADATA_FILENAME")
+            this.log.d("Loading $METADATA_FILENAME")
             this.fileToMeta(metaFile) // If this returns, the archive could be intact!
             val collectionUUID: UUID = uuidHint?: UUID.randomUUID()
             val finalPath = Path(StorageService.getCollectionsRoot().path, collectionUUID.toString())
@@ -171,12 +171,12 @@ class Collection(val id: UUID) {
     private fun addFileToZip(out: ZipOutputStream, file: File) {
         log.d("Adding file: ${file.toPath()}")
         val fi: FileInputStream = file.inputStream()
-        val buffer = ByteArray(bufferSize)
-        val origin = BufferedInputStream(fi, bufferSize)
+        val buffer = ByteArray(FILE_BUFFER_SIZE)
+        val origin = BufferedInputStream(fi, FILE_BUFFER_SIZE)
         val entry = ZipEntry(file.name)
         out.putNextEntry(entry)
         var count: Int
-        while (origin.read(buffer, 0, bufferSize).also { count = it } != -1) {
+        while (origin.read(buffer, 0, FILE_BUFFER_SIZE).also { count = it } != -1) {
             out.write(buffer, 0, count)
         }
         origin.close()
