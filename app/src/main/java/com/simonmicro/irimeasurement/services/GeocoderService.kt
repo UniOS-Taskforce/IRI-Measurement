@@ -118,11 +118,17 @@ class GeocoderService(context: Context): Closeable {
             val resolved = this.getLocation(lat, lon)
             if(resolved != null) {
                 this.db.set(lat, lon, resolved)
+                log.d("Resolved $lat, $lon to $resolved")
                 return resolved
             }
         } else
             reqCachedCnt += 1
+        log.d("Resolved $lat, $lon to $cached from cache")
         return cached
+    }
+
+    fun getCacheSize(): Long {
+        return this.db.count()
     }
 
     override fun close() {
