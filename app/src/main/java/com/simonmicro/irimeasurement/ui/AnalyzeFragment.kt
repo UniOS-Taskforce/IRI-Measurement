@@ -244,7 +244,7 @@ class AnalyzeFragment : Fragment() {
     }
 
     private var otherMarkers = ArrayList<GeoPoint>()
-    fun addSegmentMarker(location: LocationPoint) {
+    fun addSegmentMarker(location: LocationPoint, title: String?) {
         if(!this.mapShowSegmentMarkers.isChecked) return
         val m = Marker(map)
         m.position = GeoPoint(location.locLat, location.locLon)
@@ -252,16 +252,18 @@ class AnalyzeFragment : Fragment() {
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map.overlays.add(m)
+        m.title = title
         map.invalidate() // This forces the points to be visible NOW
     }
 
-    fun addIntermediateMarker(location: LocationPoint) {
+    fun addIntermediateMarker(location: LocationPoint, title: String?) {
         if(!this.mapShowIntermediateMarkers.isChecked) return
         val m = Marker(map)
         m.position = GeoPoint(location.locLat, location.locLon)
         otherMarkers.add(m.position)
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default_focused_base)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        m.title = title
         map.overlays.add(m)
     }
 
