@@ -16,24 +16,25 @@ class GVDPService {
         private val log = Log(GVDPService::class.java.name)
 
         fun shouldDisplayAgain(): Boolean {
-            val file = StorageService.getGVDPConfigPath().toFile()
-            if(!file.exists()) {
-                log.d("Never showed GVDP before...")
-                return true
-            }
-            val lastShow = file.bufferedReader().readText()
+            if (false) { // future F-Droid-only releases do not need this!
+                val file = StorageService.getGVDPConfigPath().toFile()
+                if (!file.exists()) {
+                    log.d("Never showed GVDP before...")
+                    return true
+                }
+                val lastShow = file.bufferedReader().readText()
 
-            if(lastShow != BuildConfig.VERSION_NAME) {
-                log.d("Lastly showed GVDP on $lastShow (now ${BuildConfig.VERSION_NAME})...")
-                return true
-            }
+                if (lastShow != BuildConfig.VERSION_NAME) {
+                    log.d("Lastly showed GVDP on $lastShow (now ${BuildConfig.VERSION_NAME})...")
+                    return true
+                }
 
-            val fourteenDaysInMs = 14L * 24 * 60 * 60 * 1000
-            if (System.currentTimeMillis() - file.lastModified() > fourteenDaysInMs) {
-                log.d("Lastly showed GVDP 14 days ago...")
-                return true
+                val fourteenDaysInMs = 14L * 24 * 60 * 60 * 1000
+                if (System.currentTimeMillis() - file.lastModified() > fourteenDaysInMs) {
+                    log.d("Lastly showed GVDP 14 days ago...")
+                    return true
+                }
             }
-
             return false
         }
 
