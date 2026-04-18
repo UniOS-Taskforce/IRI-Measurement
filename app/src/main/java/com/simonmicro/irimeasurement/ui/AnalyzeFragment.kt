@@ -126,24 +126,28 @@ class AnalyzeFragment : Fragment() {
         val that = this
         if(this.locService.requestPermissionsIfNecessary(this.requireActivity())) {
             // Oh, we already got all permissions? So, let's display the users location live on the map!
-            var lastUserLocation: Location? = null
             this.done = false
-            val handler = Handler()
-            var locationFailureCount = 0
+            val handler = Handler(requireContext().mainLooper)
             val runnableCode: Runnable = object : Runnable {
+                private var lastUserLocation: Location? = null
+                private var locationFailureCount = 0
+
                 override fun run() {
                     if(that.done) return
                     val loc = that.locService.getLastLocation(locationFailureCount == 0)
                     if(lastUserLocation == null || lastUserLocation != loc) {
-                        log.d("Pushing current location to map: $loc")
                         if (loc != null && !that.done) { // Also respect done flag here, as this task may complete after the view switched
+                            log.d("Pushing current location to map: $loc")
                             that.showUserLocation(loc.latitude, loc.longitude)
                             locationFailureCount = 0
                             if(lastUserLocation == null) // Only first time: Reset zoom
                                 that.resetZoom(respectUserLocation = true, animated = false)
-                        } else
+                        } else {
+                            log.d("Unable to update on-map location ($locationFailureCount): $loc")
                             locationFailureCount += 1
-                    }
+                        }
+                    } else
+                        log.d("No change to the current location on map")
                     lastUserLocation = loc
                     handler.postDelayed(this, 1000)
                 }
