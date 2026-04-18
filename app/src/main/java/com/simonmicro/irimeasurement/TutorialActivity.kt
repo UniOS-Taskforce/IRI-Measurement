@@ -14,8 +14,10 @@ class TutorialActivity : AppCompatActivity() {
 
         fun shouldDisplayAgain(): Boolean {
             val file = StorageService.getTutorialConfigPath().toFile()
-            if(!file.exists())
+            if(!file.exists()) {
+                log.d("Never showed tutorial before...")
                 return true
+            }
             val lastShow = file.bufferedReader().readText()
             return if(lastShow != BuildConfig.VERSION_NAME) {
                 log.d("Lastly showed tutorial on $lastShow (now ${BuildConfig.VERSION_NAME})...")
@@ -28,7 +30,7 @@ class TutorialActivity : AppCompatActivity() {
             val file = StorageService.getTutorialConfigPath().toFile()
             if(!file.exists())
                 file.createNewFile()
-            log.d("Never showing tutorial again for ${BuildConfig.VERSION_NAME}...")
+            log.d("Not automatically showing tutorial again for ${BuildConfig.VERSION_NAME}...")
             file.writer().use {
                 it.write(BuildConfig.VERSION_NAME)
             }
