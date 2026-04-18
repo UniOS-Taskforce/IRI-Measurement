@@ -14,7 +14,7 @@ android {
         minSdk 26
         targetSdk 36
         versionCode 24
-        versionName "1.6.6-${gitHash}"
+        versionName "1.7.0-${gitHash}"
         buildConfigField "String", "repository", '"https://github.com/UniOS-Taskforce/IRI-Measurement"'
     }
 
