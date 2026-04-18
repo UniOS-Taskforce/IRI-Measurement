@@ -9,7 +9,7 @@ import com.simonmicro.irimeasurement.R
 
 class CollectionViewAdapter(context: Context, arrayList: ArrayList<CollectionView>?) : ArrayAdapter<CollectionView?>(context, 0, arrayList!! as List<CollectionView?>) {
     companion object {
-        const val inflatorId = R.layout.collection_view
+        val inflationId = R.layout.collection_view
     }
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
@@ -17,7 +17,7 @@ class CollectionViewAdapter(context: Context, arrayList: ArrayList<CollectionVie
 
         // if the recyclable view is null then inflate the custom layout for the same
         if (currentItemView == null) {
-            currentItemView = LayoutInflater.from(context).inflate(inflatorId, parent, false)
+            currentItemView = LayoutInflater.from(context).inflate(inflationId, parent, false)
         }
 
         val currentNumberPosition: CollectionView? = getItem(position)
