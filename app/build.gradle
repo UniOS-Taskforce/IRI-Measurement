@@ -13,12 +13,12 @@ def getGitHash = { ->
 }
 
 android {
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.simonmicro.irimeasurement"
         minSdk 26
-        targetSdk 35
+        targetSdk 36
         versionCode 23
         versionName "1.6.5-${getGitHash()}"
         buildConfigField "String", "repository", '"https://github.com/UniOS-Taskforce/IRI-Measurement"'
