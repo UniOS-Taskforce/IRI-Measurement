@@ -99,7 +99,7 @@
     <string name="location_explain_text">Wie Sie vielleicht bereits bemerkt haben, erfordert die Verwendung einer GEO-Anwendung die Angabe Ihres PRÄZISEN Standortes. Bitte gestatten Sie die Verwendung (stellen Sie sicher, dass Sie auch den genauen Standortzugriff zulassen!) - andernfalls kann die App möglicherweise nicht fortfahren …</string>
     <string name="use_color_rules">Nutze Farb-Regeln</string>
     <string name="gvdp_notification_title">Dein Handy wird bald gestohlen!</string>
-    <string name="gvdp_notification_msg">...um genauer zu sein, die Freiheit wie du dein Gerät in Zukunft nutzen können wirst. Für mehr Informationen, besuche https://keepandroidopen.org\n\nDu hast die Anwendung via dem Google Play Store installiert, welcher keine weiteren (Wartungs-)Updates empfangen wird, bis diese Situation gelößt wurde.\n\nBitte erwäge die Nutzung von Alterantiven wie F-Droid (see https://f-droid.org) mit meiner Anwendungsquelle (via https://fdroid.simonmicro.de/repo).</string>
+    <string name="gvdp_notification_msg">...um genauer zu sein, die Freiheit wie du dein Gerät in Zukunft nutzen können wirst. Für mehr Informationen, besuche https://keepandroidopen.org\n\nDu hast die Anwendung via dem Google Play Store installiert, welcher keine weiteren (Wartungs-)Updates empfangen wird, bis diese Situation gelößt wurde.\n\nBitte erwäge die Nutzung von Alterantiven wie F-Droid (see https://f-droid.org) mit meiner Anwendungsquelle (via https://fdroid.simonmicro.de/repo ).</string>
     <string name="gvdp_positive">Ignorieren</string>
     <string name="gvdp_negative">Verstecken</string>
 </resources>
