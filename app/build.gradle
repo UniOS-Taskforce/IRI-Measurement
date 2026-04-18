@@ -3,14 +3,9 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-def getGitHash = { ->
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine 'git', 'rev-parse', '--short', 'HEAD'
-        standardOutput = stdout
-    }
-    return stdout.toString().trim()
-}
+def gitHash = providers.exec {
+    commandLine 'git', 'rev-parse', '--short', 'HEAD'
+}.standardOutput.asText.get().trim()
 
 android {
     compileSdk = 36
@@ -20,7 +15,7 @@ android {
         minSdk 26
         targetSdk 36
         versionCode 24
-        versionName "1.6.6-${getGitHash()}"
+        versionName "1.6.6-${gitHash}"
         buildConfigField "String", "repository", '"https://github.com/UniOS-Taskforce/IRI-Measurement"'
     }
 
