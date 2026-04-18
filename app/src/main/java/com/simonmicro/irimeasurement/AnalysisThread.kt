@@ -19,7 +19,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
     private var onUpdate = false
     private fun pushViewUpdate(force: Boolean) {
         if(this.fragment.activeAnalysisThread != this)
-            // Okay, an other analysis thread was started! We terminate now by throwing an Exception!
+            // Okay, another analysis thread was started! We terminate now by throwing an Exception!
             throw Exception(expectedKillString)
         if(this.onUpdate && !force)
             // We are still waiting for one update to finish...
@@ -62,7 +62,7 @@ class AnalysisThread(private var view: View, private var fragment: AnalyzeFragme
             this.aStatus.resultText += "\n${context.getString(R.string.analysis_segments_overall)}: ${segments.size}"
             this.pushViewUpdate(true)
 
-            // Add a point for every sections location
+            // Add a point for every section's location
             this.aStatus.workingText = context.getString(R.string.analysis_calculating)
             this.pushViewUpdate(true)
             var segmentsSkipped = 0

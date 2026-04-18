@@ -131,7 +131,7 @@ class CollectorService(appContext: Context, workerParams: WorkerParameters): Wor
         this.wakelockCPU = (applicationContext.getSystemService(Context.POWER_SERVICE) as PowerManager).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, BuildConfig.APPLICATION_ID + "::collector_cpu")
         // Register us to listen for sensors
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock-up!
+        val speed: Int = SensorManager.SENSOR_DELAY_FASTEST // Careful! If we are too fast we will lock up!
         accelSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
         tempSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE)
         gravSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY)

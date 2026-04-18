@@ -108,7 +108,7 @@ class CollectFragment : Fragment() {
             else if(state == WorkInfo.State.RUNNING)
                 this.serviceStatus?.setTextColor(Color.GREEN)
             else
-                this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from an other element
+                this.serviceStatus?.setTextColor(this.serviceLastAccel?.currentTextColor?: Color.BLUE) // "Reset" the text color by stealing it from another element
         }
         if(isRunning && CollectorService.instance != null) {
             val service: CollectorService = CollectorService.instance!!
@@ -201,7 +201,7 @@ class CollectFragment : Fragment() {
         this.updateUI() // Initial view update
         instance = this // Enable interaction from outside
 
-        // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyways)
+        // Start periodic UI update - in case the service crashes too fast to update it itself (or well, in case of a crash it won't update it anyway)
         this.done = false
         val that = this
         val handler = Handler()

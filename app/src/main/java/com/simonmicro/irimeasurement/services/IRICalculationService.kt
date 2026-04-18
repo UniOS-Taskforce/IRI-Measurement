@@ -245,7 +245,7 @@ class IRICalculationService(private val collection: Collection, private val cont
         if(fromXYZ[0] == toXYZ[0] && fromXYZ[1] == toXYZ[1] && fromXYZ[2] == toXYZ[2])
             return 0.0
         var frac: Double = (fromXYZ[0] * toXYZ[0] + fromXYZ[1] * toXYZ[1] + fromXYZ[2] * toXYZ[2]) / ((earthR + from.locHeight) * (earthR + to.locHeight))
-        frac = min(frac, 1.0) // In rare rounding cases the distance my be greater than 1, which is impossible
+        frac = min(frac, 1.0) // In rare rounding cases the distance may be greater than 1, which is impossible
         val alpha: Double = acos(frac)
         return alpha * earthR // in m
     }

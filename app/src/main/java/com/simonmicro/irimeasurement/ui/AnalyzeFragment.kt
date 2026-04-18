@@ -98,8 +98,8 @@ class AnalyzeFragment : Fragment() {
         val mapDefaultMargin: Int = map.marginBottom
 
         // Add map resize (with animation) to the button
-        val resizeButtn: FloatingActionButton = view.findViewById(R.id.toggleLayoutButton)
-        resizeButtn.setOnClickListener {
+        val resizeButton: FloatingActionButton = view.findViewById(R.id.toggleLayoutButton)
+        resizeButton.setOnClickListener {
             this.mapExpanded = !this.mapExpanded
 
             val minHeight: Int = mapDefaultMargin
@@ -107,10 +107,10 @@ class AnalyzeFragment : Fragment() {
             val valueAnimator: ValueAnimator
             if(this.mapExpanded) {
                 valueAnimator = ValueAnimator.ofInt(minHeight, maxHeight)
-                resizeButtn.setImageResource(R.drawable.ic_twotone_arrow_upward_24)
+                resizeButton.setImageResource(R.drawable.ic_twotone_arrow_upward_24)
             } else {
                 valueAnimator = ValueAnimator.ofInt(maxHeight, minHeight)
-                resizeButtn.setImageResource(R.drawable.ic_twotone_arrow_downward_24)
+                resizeButton.setImageResource(R.drawable.ic_twotone_arrow_downward_24)
             }
 
             valueAnimator.duration = 500L
@@ -136,7 +136,7 @@ class AnalyzeFragment : Fragment() {
                     val loc = that.locService.getLastLocation(locationFailureCount == 0)
                     if(lastUserLocation == null || lastUserLocation != loc) {
                         log.d("Pushing current location to map: $loc")
-                        if (loc != null && !that.done) { // Also respect done flag here, as this task may completes after the view switched
+                        if (loc != null && !that.done) { // Also respect done flag here, as this task may complete after the view switched
                             that.showUserLocation(loc.latitude, loc.longitude)
                             locationFailureCount = 0
                             if(lastUserLocation == null) // Only first time: Reset zoom
@@ -177,7 +177,7 @@ class AnalyzeFragment : Fragment() {
         this.updateAnalyzeStatus(view, AnalyzeStatus(false))
 
         view.findViewById<Button>(R.id.triggerAnalysisNow).setOnClickListener {
-            that.startAnalysis(null) // Hope, that is was executed before - so the UUID would be reusable
+            that.startAnalysis(null) // Hope, that it was executed before - so the UUID would be reusable
         }
 
         return view

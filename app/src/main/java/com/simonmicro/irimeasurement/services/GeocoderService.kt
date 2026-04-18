@@ -32,7 +32,7 @@ class GeocoderService(context: Context): Closeable {
             return p.toFile()
         }
 
-        /* this version is called for android devices >= api-11. thank to @damccull for fixing this. */
+        /* this version is called for android devices >= api-11. thanks to @damccull for fixing this. */
         override fun openOrCreateDatabase(name: String, mode: Int, factory: CursorFactory, errorHandler: DatabaseErrorHandler?): SQLiteDatabase {
             return openOrCreateDatabase(name, mode, factory)
         }
