@@ -83,6 +83,7 @@
     <string name="analysis_segments_locations">Segment-Standorte</string>
     <string name="analysis_segments_avg">Segmente IRI (Durchschn.)</string>
     <string name="analysis_segments_var">Segmente IRI (Varianz)</string>
+    <string name="analysis_gcscache_count">Geocoding Cache Größe</string>
     <string name="acceleration">Beschleunigung</string>
     <string name="geocoding">Geocoding</string>
     <string name="sort">Sortieren</string>
