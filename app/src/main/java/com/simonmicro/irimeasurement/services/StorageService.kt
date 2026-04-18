@@ -28,6 +28,10 @@ class StorageService {
             return Path(context!!.filesDir.path, "tutorial.cfg")
         }
 
+        fun getGVDPConfigPath(): Path {
+            return Path(context!!.filesDir.path, "gvdp.cfg")
+        }
+
         fun getBytesBetterString(bytes: Long): String {
             var free = bytes
             var unit: String = "Bytes"

@@ -12,6 +12,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.simonmicro.irimeasurement.databinding.ActivityHomeScreenBinding
+import com.simonmicro.irimeasurement.services.GVDPService
 import com.simonmicro.irimeasurement.services.LocationService
 import com.simonmicro.irimeasurement.services.StorageService
 
@@ -45,6 +46,9 @@ class HomeScreen : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
+        // Trigger announcements or alerts
+        if(GVDPService.shouldDisplayAgain())
+            GVDPService.displayNow(this)
         if(TutorialActivity.shouldDisplayAgain())
             startActivity(Intent(this, TutorialActivity::class.java))
     }
@@ -61,6 +65,7 @@ class HomeScreen : AppCompatActivity() {
             true
         } else if(item.itemId == R.id.home_screen_options_show_tutorial) {
             startActivity(Intent(this, TutorialActivity::class.java))
+            GVDPService.resetDisplayAgain() // also reset this alert again (useful for development)
             true
         } else
             super.onOptionsItemSelected(item)
