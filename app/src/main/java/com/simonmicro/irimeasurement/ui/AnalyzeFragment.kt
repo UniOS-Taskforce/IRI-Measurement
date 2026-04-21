@@ -282,7 +282,7 @@ class AnalyzeFragment : Fragment() {
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
         map.overlays.add(m)
-        m.title = title
+        if (!title.isNullOrEmpty()) m.title = null
         map.invalidate() // This forces the points to be visible NOW
     }
 
@@ -293,7 +293,7 @@ class AnalyzeFragment : Fragment() {
         otherMarkers.add(m.position)
         m.icon = resources.getDrawable(org.osmdroid.library.R.drawable.marker_default_focused_base)
         m.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        m.title = title
+        if (!title.isNullOrEmpty()) m.title = null
         map.overlays.add(m)
     }
 
@@ -306,8 +306,7 @@ class AnalyzeFragment : Fragment() {
         otherMarkers.addAll(points)
         val line = Polyline(map)
         line.setPoints(points)
-        if(title != null)
-            line.title = title
+        if(!title.isNullOrEmpty()) line.title = title
         line.color = color ?: lineColors[lineColorsIndex]
         lineColorsIndex += 1
         if(lineColorsIndex >= lineColors.size)
