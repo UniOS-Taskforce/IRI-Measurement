@@ -13,8 +13,8 @@ android {
         applicationId "com.simonmicro.irimeasurement"
         minSdk 26
         targetSdk 36
-        versionCode 25
-        versionName "1.7.1-${gitHash}"
+        versionCode 26
+        versionName "1.7.2-${gitHash}"
         buildConfigField "String", "repository", '"https://github.com/UniOS-Taskforce/IRI-Measurement"'
     }
 
