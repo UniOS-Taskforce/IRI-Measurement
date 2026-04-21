@@ -103,7 +103,7 @@
     <string name="sort">Sort</string>
     <string name="assemble">Assemble</string>
     <string name="gvdp_notification_title">Your phone is about to be stolen!</string>
-    <string name="gvdp_notification_msg">...or more precisely your ability to use it as you see fit. For more information visit https://keepandroidopen.org\n\nYou have installed this app via the Google Play Store, which will stop receiving further (maintenance) updates until the situation has been resolved.\n\nPlease consider using alternatives, like F-Droid (see https://f-droid.org) with my repository (via https://fdroid.simonmicro.de/repo ).</string>
+    <string name="gvdp_notification_msg">...or more precisely your ability to use it as you see fit. For more information visit https://keepandroidopen.org\n\nYou have installed this app via the Google Play Store, which will stop receiving further (maintenance) updates until the situation has been resolved.\n\nPlease consider using alternatives, like F-Droid (see https://f-droid.org) with my https://fdroid.simonmicro.de/repo repository.</string>
     <string name="gvdp_positive">Ignore</string>
     <string name="gvdp_negative">Hide</string>
 </resources>
