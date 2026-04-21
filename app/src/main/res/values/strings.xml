@@ -20,6 +20,7 @@
     <string name="running">Running…</string>
     <string name="stop">Stop</string>
     <string name="start">Start</string>
+    <string name="unavailable">unavailable</string>
     <string name="warning_icon_description">Warning Icon</string>
     <string name="save_description">Save Button</string>
     <string name="delete_description">Delete Button</string>

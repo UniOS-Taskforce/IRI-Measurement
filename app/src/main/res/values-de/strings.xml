@@ -40,6 +40,7 @@
     <string name="warning_icon_description">Warnungs Symbol</string>
     <string name="start">Starten</string>
     <string name="stop">Stoppen</string>
+    <string name="unavailable">nicht verfügbar</string>
     <string name="running">Aktiv…</string>
     <string name="stopped">Angehalten</string>
     <string name="crashed">Abgestürzt</string>

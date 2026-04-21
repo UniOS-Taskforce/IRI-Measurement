@@ -2,6 +2,7 @@ package com.simonmicro.irimeasurement.ui
 
 import android.animation.ValueAnimator
 import android.graphics.Color
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
@@ -76,10 +77,13 @@ class AnalyzeFragment : Fragment() {
             dText.text = aStatus.resultText
         } else
             dText.visibility = TextView.GONE
-        var gcsSwitchTitle = view.context.getString(R.string.use_geocode)
-        if(aStatus.gcsCacheSize != null)
-            gcsSwitchTitle += " (${aStatus.gcsCacheSize} ${view.context.getString(R.string.use_geocode_cache_suffix)})"
-        gcsSwitch.text = gcsSwitchTitle
+        if(aStatus.gcsCacheSize != null) {
+            // only update this string, if we have some feedback from the db, otherwise not
+            gcsSwitch.text = buildString {
+                append(view.context.getString(R.string.use_geocode))
+                append(" (${aStatus.gcsCacheSize} ${view.context.getString(R.string.use_geocode_cache_suffix)})")
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -135,10 +139,13 @@ class AnalyzeFragment : Fragment() {
             val handler = Handler(requireContext().mainLooper)
             val runnableCode: Runnable = object : Runnable {
                 private var lastUserLocation: Location? = null
+                private var lastGeocodingAvailable: Boolean? = null
                 private var locationFailureCount = 0
 
                 override fun run() {
                     if(that.done) return
+
+                    // update the user position
                     val loc = that.locService.getLastLocation(locationFailureCount == 0)
                     if(lastUserLocation == null || lastUserLocation != loc) {
                         if (loc != null && !that.done) { // Also respect done flag here, as this task may complete after the view switched
@@ -154,6 +161,24 @@ class AnalyzeFragment : Fragment() {
                     } else
                         log.d("No change to the current location on map")
                     lastUserLocation = loc
+
+                    // update geocoder option
+                    val geo = Geocoder.isPresent();
+                    if (lastGeocodingAvailable == null || lastGeocodingAvailable != geo) {
+                        log.d("Pushing geocoding option to view: $geo")
+                        val geocodingSwitch: Switch = view.findViewById(R.id.analysisUseGeocoding)
+                        geocodingSwitch.isEnabled = geo
+                        geocodingSwitch.isChecked = geo
+                        geocodingSwitch.text = buildString {
+                            append(view.context.getString(R.string.use_geocode))
+                            if (!geo)
+                                append(" (${view.context.getString(R.string.unavailable)})")
+                        }
+                        lastGeocodingAvailable = geo
+                    } else {
+                        log.d("No change to the geocoding option on view")
+                    }
+
                     handler.postDelayed(this, 1000)
                 }
             }
